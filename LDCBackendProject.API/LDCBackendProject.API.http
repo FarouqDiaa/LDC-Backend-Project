@@ -1,0 +1,6 @@
+@LDCBackendProject.API_HostAddress = http://localhost:5155
+
+GET {{LDCBackendProject.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

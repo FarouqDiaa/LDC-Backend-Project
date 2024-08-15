@@ -12,7 +12,6 @@ namespace LDCBackendProject.Core.Interfaces
         IProductRepository Products { get; }
         IUserRepository Users { get; }
         IOrderRepository Orders { get; }
-        ICategoryRepository Categories { get; }
 
 
     }

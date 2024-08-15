@@ -11,14 +11,19 @@ namespace LDCBackendProject.BLL.UseCases
 {
     public class UserService : IUserService
     {
-        protected IUnitOfWork _userRepository { get; set; }
+        protected IUnitOfWork _unitOfWork { get; set; }
         public UserService(IUserRepository userRepository)
         {
-            _userRepository = userRepository;
+            //_userRepository = userRepository;
         }
-        public User GetUserById(int id)
+
+        User IUserService.GetUserById(int id)
         {
-            return _userRepository.GetById(id);
+            throw new NotImplementedException();
         }
+        //public User GetUserById(int id)
+        //{
+        //    //return _userRepository.GetById(id);
+        //}
     }
 }
