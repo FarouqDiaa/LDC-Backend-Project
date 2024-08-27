@@ -15,24 +15,26 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Order> GetByIdAsync(Guid id)
         {
-            return await _context.Set<Order>().SingleOrDefaultAsync(o => o.OrderId == id);
+            return await _context.Orders.SingleOrDefaultAsync(o => o.OrderId == id);
         }
 
         public async Task AddAsync(Order order)
         {
-            await _context.Set<Order>().AddAsync(order);
+            order.CreatedOn = DateTime.UtcNow;
+            order.UpdatedOn = DateTime.UtcNow;
+            await _context.Orders.AddAsync(order);
             await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<Order>> GetAllAsync()
         {
-            return await _context.Set<Order>().ToListAsync();
+            return await _context.Orders.ToListAsync();
 
         }
 
         public async Task<IEnumerable<Order>> GetAllPagedAsync(int pageNumber, int pageCount, Guid customerId)
         {
-            return await _context.Set<Order>()
+            return await _context.Orders
                                  .Where(o => o.CustomerId == customerId)
                                  .Skip((pageNumber - 1) * pageCount)
                                  .Take(pageCount)

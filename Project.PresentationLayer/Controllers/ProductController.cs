@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.JsonPatch;
 using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
+using System.ComponentModel.DataAnnotations;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -36,8 +37,14 @@ namespace Project.PresentationLayer.Controllers
                 var products = await _productService.GetAllProductsAsync(pageNumber, id);
                 return Ok(products);
             }
-            catch(NotFoundException e) {
+            catch (NotFoundException e)
+            {
+                _logger.LogWarning(e, "Product not found for ID {ProductId}", id);
                 return NotFound(e);
+            }
+            catch (ArgumentException e) {
+                _logger.LogError(e, "Error retrieving product by ID {ProductId}", id);
+                return BadRequest(e);
             }
         }
 
@@ -55,7 +62,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         [HttpPost("addproduct/{id}")]
-        public async Task<IActionResult> AddProduct(Guid id, NewProductVM newProduct)
+        public async Task<IActionResult> AddProduct(Guid id,[FromBody][Required] NewProductVM newProduct)
         {
             try
             {
@@ -73,7 +80,7 @@ namespace Project.PresentationLayer.Controllers
 
 
         [HttpPatch("updateproduct/{id}/{customerId}")]
-        public async Task<IActionResult> PatchProduct(Guid id,Guid customerId ,[FromBody] JsonPatchDocument<ProductDTO> patchDoc)
+        public async Task<IActionResult> PatchProduct(Guid id,Guid customerId ,[FromBody][Required] JsonPatchDocument<ProductDTO> patchDoc)
         {
             if (patchDoc == null)
             {

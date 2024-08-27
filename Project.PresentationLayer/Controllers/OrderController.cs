@@ -4,6 +4,8 @@ using Project.BusinessDomainLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Project.BusinessDomainLayer.Services;
+using OpenQA.Selenium;
+using Project.BusinessDomainLayer.VMs;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -25,40 +27,48 @@ namespace Project.PresentationLayer.Controllers
         [HttpGet("getallorders/{customerId}")]
         public async Task<IActionResult> GetAllOrders(Guid customerId, [FromQuery] int pageNumber = 1)
         {
-            var orders = await _orderService.GetAllOrdersAsync(pageNumber, customerId);
-            if (orders == null) { 
-            return NotFound("This cutomer has no orders");
+            try
+            {
+                var orders = await _orderService.GetAllOrdersAsync(pageNumber, customerId);
+                return Ok(orders);
             }
-            return Ok(orders);
+            catch (NotFoundException e)
+            {
+                return Conflict(e);
+            }
+            catch (ArgumentNullException e)
+            {
+                return NotFound(e);
+            }
         }
 
         [HttpPost("addorder")]
-        public async Task<IActionResult> AddOrder(NewOrderDTO newOrder)
+        public async Task<IActionResult> AddOrder(NewOrderVM newOrder)
         {
-            await _orderService.CreateOrderAsync(newOrder);
-            return Ok("Order added successfully");
+            try
+            {
+                await _orderService.CreateOrderAsync(newOrder);
+                return Ok("Order added successfully");
+            }
+            catch (InvalidOperationException e)
+            {
+                return Conflict(e);
+            }
         }
 
-        [HttpDelete("deleteorder/{id}")]
-        //[Authorize]
-        public async Task<IActionResult> DeleteOrder(Guid id)
+        [HttpDelete("deleteorder/{id}/{customerId}")]
+        public async Task<IActionResult> DeleteOrder(Guid id, Guid customerId)
         {
-
-            //var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
-            string isAdminClaim = "1";
-            if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
+            try
             {
-                var existingOrder = await _orderService.GetOrderByIdAsync(id);
-                if (existingOrder == null)
-                {
-                    return NotFound("Order not found");
-                }
-
-                await _orderService.DeleteOrderAsync(id);
-
+                await _orderService.DeleteOrderAsync(id, customerId);
                 return Ok("Order deleted successfully");
+
             }
-            return Conflict("Not and admin");
+            catch (NotFoundException e)
+            {
+                return NotFound(e);
+            }
         }
     }
 }

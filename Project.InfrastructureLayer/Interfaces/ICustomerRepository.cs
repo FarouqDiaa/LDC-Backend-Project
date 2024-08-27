@@ -9,6 +9,7 @@ namespace Project.InfrastructureLayer.Interfaces
         public Task<Customer> GetByEmailAsync(string email);
 
         public Task<bool> CustomerExistsAsync(string email);
+        public Task<bool> CustomerExistsWithIdAsync(Guid id);
 
         public Task<bool> IsAdmin(Guid id);
     }

@@ -3,6 +3,7 @@ using Project.BusinessDomainLayer.Interfaces;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
 using Project.BusinessDomainLayer.VMs;
+using System.ComponentModel.DataAnnotations;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -26,7 +27,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> LogIn([FromBody] LoginVM login)
+        public async Task<IActionResult> LogIn([FromBody][Required] LoginVM login)
         {
             try {
                 var customer = await _customerService.AuthenticateAsync(login.Email, login.Password);
@@ -42,7 +43,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody] NewCustomerVM newCustomer)
+        public async Task<IActionResult> SignUp([FromBody][Required] NewCustomerVM newCustomer)
         {
             try
             {

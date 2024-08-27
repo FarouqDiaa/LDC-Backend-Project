@@ -18,7 +18,7 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Product> GetByIdAsync(Guid id)
         {
-            return await _context.Set<Product>().SingleOrDefaultAsync(p => p.ProductId == id);
+            return await _context.Products.SingleOrDefaultAsync(p => p.ProductId == id);
         }
 
 
@@ -46,43 +46,49 @@ namespace Project.InfrastructureLayer.Repositories
             return product;
         }
 
-        public async Task AddAsync(Product product)
-        {
-            await _context.Set<Product>().AddAsync(product);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task<IEnumerable<Product>> GetAllAsync()
         {
-            return await _context.Set<Product>().ToListAsync();
+            return await _context.Products.ToListAsync();
 
         }
 
-        public async Task<IEnumerable<Product>> GetAllPagedAsync(int pageNumber, int pageSize, bool isAdmin)
+        public async Task<IEnumerable<Product>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
-            if (isAdmin)
+            var cacheKey = $"ProductsPage-{pageNumber}";
+            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Product> products))
             {
-                return await _context.Set<Product>()
-                                     .Skip((pageNumber - 1) * pageSize)
-                                     .Take(pageSize)
-                                     .ToListAsync();
-            }
-            else 
-            {
+                products = await _context.Products
+                                         .Where(p => p.IsDeleted == false)
+                                         .Skip((pageNumber - 1) * pageSize)
+                                         .Take(pageSize)
+                                         .ToListAsync();
 
-                return await _context.Set<Product>()
-                                     .Where(p => p.IsDeleted == false)
-                                     .Skip((pageNumber - 1) * pageSize)
-                                     .Take(pageSize)
-                                     .ToListAsync();
+                if (pageNumber == 1)
+                {
+                    var cacheOptions = new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                    };
+
+                    _cache.Set(cacheKey, products, cacheOptions);
+                }
             }
+
+            return products;
         }
+
         public void Update(Product product)
         {
             product.UpdatedOn = DateTime.UtcNow;
-            _context.Set<Product>().Update(product);
+            _context.Products.Update(product);
+            _cache.Remove($"ProductsPage-1");
         }
 
+        public async Task AddAsync(Product product)
+        {
+            await _context.Products.AddAsync(product);
+            _cache.Remove($"ProductsPage-1");
+        }
 
         public async Task RemoveByIdAsync(Guid id)
         {
@@ -90,8 +96,11 @@ namespace Project.InfrastructureLayer.Repositories
             if (product != null)
             {
                 product.IsDeleted = true;
+                _cache.Remove($"ProductsPage-1");
             }
         }
+
+
 
         public async Task<bool> ProductExistsAsync(Guid id)
         {
@@ -108,34 +117,33 @@ namespace Project.InfrastructureLayer.Repositories
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
 
-                await CacheRandomProductsAsync(10);
             }
 
             return exists;
         }
-        public async Task CacheRandomProductsAsync(int numberOfProductsToCache)
+
+        public async Task<IEnumerable<Product>> GetAllPagedAsAdminAsync(int pageNumber, int pageSize)
         {
-            var randomProducts = await _context.Products
-                                                .AsNoTracking()
-                                                .OrderBy(p => new Guid())
-                                                .Take(numberOfProductsToCache)
-                                                .Select(p => p.ProductId)
-                                                .ToListAsync();
-
-            foreach (var id in randomProducts)
+            var cacheKey = $"ProductsPageAdmin-{pageNumber}";
+            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Product> products))
             {
-                var exists = await _context.Products
-                                           .AsNoTracking()
-                                           .AnyAsync(p => p.ProductId == id);
+                products = await _context.Products
+                                         .Skip((pageNumber - 1) * pageSize)
+                                         .Take(pageSize)
+                                         .ToListAsync();
 
-                var cacheKey = $"ProductExists-{id}";
-                var cacheOptions = new MemoryCacheEntryOptions
+                if (pageNumber == 1)
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-                };
+                    var cacheOptions = new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                    };
 
-                _cache.Set(cacheKey, exists, cacheOptions);
+                    _cache.Set(cacheKey, products, cacheOptions);
+                }
             }
+
+            return products;
         }
     }
 }

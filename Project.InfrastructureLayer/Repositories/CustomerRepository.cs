@@ -68,34 +68,28 @@ namespace Project.InfrastructureLayer.Repositories
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
 
-                await CacheRandomEmailsAsync(10);
             }
 
             return exists;
         }
-        public async Task CacheRandomEmailsAsync(int numberOfUsersToCache)
+        public async Task<bool> CustomerExistsWithIdAsync(Guid customerId)
         {
-            var randomEmails = await _context.Customers
-                                                .AsNoTracking()
-                                                .OrderBy(c => Guid.NewGuid())
-                                                .Take(numberOfUsersToCache)
-                                                .Select(c => c.Email)
-                                                .ToListAsync();
-
-            foreach (var email in randomEmails)
+            var cacheKey = $"CustomerExists-{customerId}";
+            if (!_cache.TryGetValue(cacheKey, out bool exists))
             {
-                var exists = await _context.Customers
-                                           .AsNoTracking()
-                                           .AnyAsync(c => c.Email == email);
+                exists = await _context.Customers
+                                       .AsNoTracking()
+                                       .AnyAsync(c => c.CustomerId == customerId);
 
-                var cacheKey = $"CustomerExists-{email}";
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
                 };
-
                 _cache.Set(cacheKey, exists, cacheOptions);
+
             }
+
+            return exists;
         }
         public async Task<bool> IsAdmin(Guid id)
         {

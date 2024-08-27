@@ -38,12 +38,12 @@ namespace Project.BusinessDomainLayer.Services
             if (existingCustomer != null) {
             throw new InvalidOperationException("Email already used");
             }
-            var customer = await GeneratePassword(_mapper.Map<Customer>(newCustomer), newCustomer.Password);
+            var customer = GeneratePassword(_mapper.Map<Customer>(newCustomer), newCustomer.Password);
             await _customerRepository.AddAsync(customer);
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task <Customer> GeneratePassword(Customer customer,string password)
+        public  Customer GeneratePassword(Customer customer,string password)
         {
             var passwordSalt = _encryption.GenerateSaltedPassword();
             var passwordHash = _encryption.GenerateEncryptedPassword(passwordSalt, password);

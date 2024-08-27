@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Project.BusinessDomainLayer.DTOs;
+using System.ComponentModel.DataAnnotations;
 
-namespace Project.BusinessDomainLayer.DTOs
+namespace Project.BusinessDomainLayer.VMs
 {
-    public class NewOrderDTO
+    public class NewOrderVM
     {
         [Required(ErrorMessage = "CustomerId is required")]
         public Guid CustomerId { get; set; }

@@ -1,6 +1,7 @@
 ﻿using Project.BusinessDomainLayer.DTOs;
 using Project.InfrastructureLayer.Entities;
 using AutoMapper;
+using Project.BusinessDomainLayer.VMs;
 
 namespace Project.RuntimeLayer.Mappings
 {
@@ -9,7 +10,7 @@ namespace Project.RuntimeLayer.Mappings
         public OrderItemMappingProfile()
         {
             CreateMap<OrderItem, OrderItemDTO>().ReverseMap();
-            CreateMap<NewOrderItemDTO, OrderItem>();
+            CreateMap<NewOrderItemVM, OrderItem>();
         }
     }
 }

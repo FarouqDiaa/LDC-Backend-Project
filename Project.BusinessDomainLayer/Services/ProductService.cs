@@ -20,12 +20,13 @@ namespace Project.BusinessDomainLayer.Services
         private readonly IProductRepository _productRepository;
         private readonly ICustomerRepository _customerRepository;
 
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache cache, IProductRepository productRepository)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache cache, IProductRepository productRepository, ICustomerRepository customerRepository)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _cache = cache;
             _productRepository = productRepository;
+            _customerRepository = customerRepository;
         }
 
         public async Task<ProductDTO> GetProductByIdAsync(Guid id)
@@ -41,7 +42,7 @@ namespace Project.BusinessDomainLayer.Services
                 throw new AccessViolationException("UnAuthorized");
             }
 
-            var existingProduct = _productRepository.GetByNameAsync(newProduct.Name);
+            var existingProduct = await _productRepository.GetByNameAsync(newProduct.Name);
             if (existingProduct != null)
             {
                 throw new Exception("Product name used");
@@ -50,6 +51,7 @@ namespace Project.BusinessDomainLayer.Services
             if (product.StockQuantity == 0) {
                 product.Status = "OutOfStock";
             }
+            product.Status = "InStock";
             await _productRepository.AddAsync(product);
             await _unitOfWork.CompleteAsync();
         }
@@ -64,7 +66,18 @@ namespace Project.BusinessDomainLayer.Services
         {
             bool isAdmin = await _customerRepository.IsAdmin(customerId);
             int pageCount = 25;
-            var products = await _productRepository.GetAllPagedAsync(pageNumber, pageCount, isAdmin) ?? throw new NotFoundException("No Products Found");
+            if (pageNumber <= 0) {
+                throw new ArgumentException("Page number is invalid");
+            }
+            IEnumerable<Product> products;
+            if (isAdmin)
+            {
+                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageCount) ?? throw new NotFoundException("No Products Found");
+            }
+            else
+            {
+                products = await _productRepository.GetAllPagedAsync(pageNumber, pageCount) ?? throw new NotFoundException("No Products Found");
+            }
             return _mapper.Map<IEnumerable<ProductDTO>>(products);
         }
 
@@ -89,7 +102,7 @@ namespace Project.BusinessDomainLayer.Services
                 var oldProduct = await _productRepository.GetByNameAsync(newProduct.Name);
                 if (oldProduct != null)
                 {
-                    throw new Exception("Name already used");
+                    throw new InvalidOperationException($"The product name '{newProduct.Name}' is already in use.");
                 }
             }
 

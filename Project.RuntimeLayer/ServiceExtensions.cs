@@ -28,16 +28,13 @@ namespace Project.RuntimeLayer
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IOrderItemService, OrderItemService>();
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddSingleton<ApplicationDbContext>();
 
             services.AddTransient<IEncryption, EncryptionService>();
 
             services.AddSingleton<JwtService>();
-
             var jwtSettings = configuration.GetSection("JwtSettings");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
             services.AddAuthentication(options =>
