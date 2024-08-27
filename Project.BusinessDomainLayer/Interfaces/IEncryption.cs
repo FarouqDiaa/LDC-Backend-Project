@@ -2,8 +2,8 @@
 {
     public interface IEncryption
     {
-        public Task<string> GenerateSaltedPassword();
-        public Task<string> GenerateEncryptedPassword(string saltedPassword, string password);
-        public Task<bool> ValidateEncryptedData(string valueToValidate, string hashValue, string salt);
+        public string GenerateSaltedPassword();
+        public string GenerateEncryptedPassword(string saltedPassword, string password);
+        public bool ValidateEncryptedData(string valueToValidate, string hashValue, string salt);
     }
 }

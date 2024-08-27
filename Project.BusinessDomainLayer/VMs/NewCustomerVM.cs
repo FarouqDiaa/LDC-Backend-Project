@@ -1,11 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Project.BusinessDomainLayer.DTOs
+namespace Project.BusinessDomainLayer.VMs
 {
-    public class NewCustomerDTO
+    public class NewCustomerVM
     {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid Email Address")]
+        public string Email { get; set; }
+
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(20, ErrorMessage = "Name shouldn't be over 20 characters")]
+        [StringLength(100, MinimumLength = 4, ErrorMessage = "Name must be at least 4 characters and no more than 100 characters")]
+        [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z]{4,}$", ErrorMessage = "Name must contain only letters")]
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Password is required")]

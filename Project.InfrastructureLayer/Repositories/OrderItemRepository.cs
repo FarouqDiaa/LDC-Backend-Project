@@ -1,4 +1,5 @@
-﻿using Project.InfrastructureLayer.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Project.InfrastructureLayer.Entities;
 using Project.InfrastructureLayer.Interfaces;
 
 namespace Project.InfrastructureLayer.Repositories
@@ -12,7 +13,7 @@ namespace Project.InfrastructureLayer.Repositories
         }
         public async Task<OrderItem> GetByIdAsync(Guid id)
         {
-            return await _context.Set<OrderItem>().FindAsync(id);
+            return await _context.Set<OrderItem>().SingleOrDefaultAsync(o => o.OrderId == id);
         }
 
         public async Task AddAsync(OrderItem orderItem)

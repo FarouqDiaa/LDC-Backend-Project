@@ -3,7 +3,8 @@ using Project.BusinessDomainLayer.Interfaces;
 using Project.InfrastructureLayer.Interfaces;
 using Project.InfrastructureLayer.Entities;
 using AutoMapper;
-using Project.InfrastructureLayer.Repositories;
+using Project.BusinessDomainLayer.VMs;
+using OpenQA.Selenium;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -12,56 +13,68 @@ namespace Project.BusinessDomainLayer.Services
         private readonly IEncryption _encryption;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICustomerRepository _customerRepository;
 
-        public CustomerService(IUnitOfWork unitOfWork, IMapper mapper, IEncryption encryption)
+        public CustomerService(IUnitOfWork unitOfWork, IMapper mapper, IEncryption encryption, ICustomerRepository customerRepository)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _encryption = encryption;
+            _customerRepository = customerRepository;
         }
 
         public async Task<CustomerDTO> GetCustomerByIdAsync(Guid id)
         {
-            var customer = await _unitOfWork.Customers.GetByIdAsync(id);
-            if (customer == null) return null;
+            var customer = await _customerRepository.GetByIdAsync(id);
+            if (customer == null) throw new NotFoundException("Customer not found");
 
 
             return _mapper.Map<CustomerDTO>(customer);
         }
 
-        public async Task CreateCustomerAsync(CustomerDTO newCustomer)
+        public async Task CreateCustomerAsync(NewCustomerVM newCustomer)
         {
-            var customer = _mapper.Map<Customer>(newCustomer);
-            await _unitOfWork.Customers.AddAsync(customer);
+            var existingCustomer = await _customerRepository.GetByEmailAsync(newCustomer.Email);
+            if (existingCustomer != null) {
+            throw new InvalidOperationException("Email already used");
+            }
+            var customer = await GeneratePassword(_mapper.Map<Customer>(newCustomer), newCustomer.Password);
+            await _customerRepository.AddAsync(customer);
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<CustomerDTO> AuthenticateAsync(string username, string password)
+        public async Task <Customer> GeneratePassword(Customer customer,string password)
         {
-            var customer = await _unitOfWork.Customers.GetByUsernameAsync(username);
+            var passwordSalt = _encryption.GenerateSaltedPassword();
+            var passwordHash = _encryption.GenerateEncryptedPassword(passwordSalt, password);
+            customer.PasswordSalt = passwordSalt;
+            customer.PasswordHash = passwordHash;
+            return customer;
 
-            if (customer == null)
-            {
-                return null;
-            }
+        }
 
-            bool isValidPassword = await _encryption.ValidateEncryptedData(password, customer.PasswordHash, customer.PasswordSalt);
+        public async Task<CustomerDTO> AuthenticateAsync(string email, string password)
+        {
+            Customer customer = await _customerRepository.GetByEmailAsync(email) ?? throw new ArgumentNullException(nameof(CustomerDTO), "Email not registered");
+            bool isValidPassword = _encryption.ValidateEncryptedData(password, customer.PasswordHash, customer.PasswordSalt);
 
-            if (!isValidPassword)
-            {
-                return null;
-            }
+            if (!isValidPassword)throw new InvalidOperationException("Username or password is incorrect");
 
             var customerDto = _mapper.Map<CustomerDTO>(customer);
             return customerDto;
         }
 
-        public async Task<CustomerDTO> GetCustomerByUsernameAsync(string username)
+        public async Task<CustomerDTO> GetCustomerByEmailAsync(string email)
         {
-            var customer = await _unitOfWork.Customers.GetByUsernameAsync(username);
+            var customer = await _customerRepository.GetByEmailAsync(email);
 
             var customerDto = _mapper.Map<CustomerDTO>(customer);
             return customerDto;
+        }
+
+        public async Task<bool> IsTheUserAdmin(Guid id) {
+            return await _customerRepository.IsAdmin(id);
+
         }
     }
 }

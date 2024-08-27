@@ -6,6 +6,10 @@ namespace Project.InfrastructureLayer.Interfaces
     {
         public Task<Customer> GetByIdAsync(Guid id);
         public Task AddAsync(Customer customer);
-        public Task<Customer> GetByUsernameAsync(string username);
+        public Task<Customer> GetByEmailAsync(string email);
+
+        public Task<bool> CustomerExistsAsync(string email);
+
+        public Task<bool> IsAdmin(Guid id);
     }
 }

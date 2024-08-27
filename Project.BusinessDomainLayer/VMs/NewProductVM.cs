@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Project.BusinessDomainLayer.DTOs
+namespace Project.BusinessDomainLayer.VMs
 {
-    public class NewProductDTO
+    public class NewProductVM
     {
         [Required(ErrorMessage = "Name is required")]
         [StringLength(100, ErrorMessage = "Name shouldn't be over 100 characters")]
@@ -17,10 +17,10 @@ namespace Project.BusinessDomainLayer.DTOs
 
         [Required(ErrorMessage = "Amount is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be a positive value")]
-        public double Amount { get; set; }
+        public double Cost { get; set; }
 
         [Required(ErrorMessage = "StockQuantity is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "StockQuantity must be a positive value")]
+        [Range(0, int.MaxValue, ErrorMessage = "StockQuantity must be a positive value")]
         public int StockQuantity { get; set; }
 
     }

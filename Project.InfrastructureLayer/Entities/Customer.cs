@@ -5,35 +5,25 @@ namespace Project.InfrastructureLayer.Entities
 {
     public class Customer
     {
-        [Key]
         public Guid CustomerId { get; set; } = Guid.NewGuid();
 
-        [Required(ErrorMessage = "Name is required")]
-        [StringLength(20, ErrorMessage = "Name shouldn't be over 20 characters")]
-        public string Name { get; set; }
+        public string Name { get; set; } = String.Empty;
+        public string Email { get; set; } = String.Empty;
+        public string Address { get; set; } = String.Empty;
 
-        public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = String.Empty;
 
-        [Phone(ErrorMessage = "Invalid Phone Number")]
-        public string Phone { get; set; } = string.Empty;
+        public string Status { get; set; }
 
-        [Required]
-        [RegularExpression("Active|InActive", ErrorMessage = "Status must be either 'Active' or 'InActive'")]
-        public string Status { get; set; } = "InActive";
-
-        [Required(ErrorMessage = "Password Hash is required")]
         public string PasswordHash { get; set; }
 
-        [Required(ErrorMessage = "Password Salt is required")]
         public string PasswordSalt { get; set; }
 
-        [Required]
         public bool IsAdmin { get; init; } = false;
 
-        [Required]
-        public DateTime CreatedOn { get; set; } = DateTime.Now;
+        public DateTime CreatedOn { get; set; }
 
-        public DateTime UpdatedOn { get; set; } = DateTime.Now;
+        public DateTime UpdatedOn { get; set; }
 
         public bool IsDeleted { get; set; } = false;
 

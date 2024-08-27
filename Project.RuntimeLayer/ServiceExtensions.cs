@@ -10,6 +10,7 @@ using Project.InfrastructureLayer.Repositories;
 using Project.InfrastructureLayer;
 using Project.RuntimeLayer.Mappings;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace Project.RuntimeLayer
 {
@@ -18,6 +19,9 @@ namespace Project.RuntimeLayer
         public static void ConfigureApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddAutoMapper(typeof(CustomerMappingProfile));
+            services.AddMemoryCache(); 
+            services.AddControllers().AddNewtonsoftJson();
+
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ICustomerService, CustomerService>();
@@ -28,6 +32,7 @@ namespace Project.RuntimeLayer
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddSingleton<ApplicationDbContext>();
 
             services.AddTransient<IEncryption, EncryptionService>();
 
@@ -35,7 +40,6 @@ namespace Project.RuntimeLayer
 
             var jwtSettings = configuration.GetSection("JwtSettings");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -53,6 +57,12 @@ namespace Project.RuntimeLayer
                     ValidAudience = jwtSettings["Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(secretKey)
                 };
+            });
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
+                loggingBuilder.AddConsole();
+                loggingBuilder.AddDebug();
             });
         }
     }

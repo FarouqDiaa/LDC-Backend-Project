@@ -1,11 +1,8 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.Interfaces;
-using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using Project.BusinessDomainLayer.VMs;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -17,60 +14,76 @@ namespace Project.PresentationLayer.Controllers
         private readonly IMapper _mapper;
         private readonly IEncryption _encryption;
         private readonly JwtService _jwtService;
+        private readonly ILogger<CustomerController> _logger;
 
-        public CustomerController(ICustomerService customerService, IMapper mapper, IEncryption encryption, JwtService jwtService)
+        public CustomerController(ICustomerService customerService, IMapper mapper, IEncryption encryption, JwtService jwtService, ILogger<CustomerController> logger)
         {
             _customerService = customerService;
             _mapper = mapper;
             _encryption = encryption;
             _jwtService = jwtService;
+            _logger = logger;
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> LogIn([FromBody] LoginDto loginDto)
+        public async Task<IActionResult> LogIn([FromBody] LoginVM login)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
+            try {
+                var customer = await _customerService.AuthenticateAsync(login.Email, login.Password);
+                return Ok(customer);
             }
-
-            var customerDto = await _customerService.AuthenticateAsync(loginDto.Username, loginDto.Password);
-            if (customerDto == null) return Unauthorized();
-
-            var token = _jwtService.GenerateToken(customerDto.CustomerId, customerDto.Name, customerDto.IsAdmin);
-
-            return Ok(new { Token = token });
+            catch (ArgumentNullException e)
+            {
+                return NotFound(e);
+            }
+            catch (InvalidOperationException e) { 
+                return BadRequest(e);
+            }
         }
 
         [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody] NewCustomerDTO newCustomerDto)
+        public async Task<IActionResult> SignUp([FromBody] NewCustomerVM newCustomer)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                await _customerService.CreateCustomerAsync(newCustomer);
+                return Ok("Successfully Signed Up");
             }
-
-            var existingCustomer = await _customerService.GetCustomerByUsernameAsync(newCustomerDto.Name);
-            if (existingCustomer != null)
+            catch (InvalidOperationException e)
             {
-                return Conflict("Username already exists");
+                return BadRequest(e);
             }
-
-            var passwordSalt = await _encryption.GenerateSaltedPassword();
-            var passwordHash = await _encryption.GenerateEncryptedPassword(passwordSalt, newCustomerDto.Password);
-
-            var customerDto = new CustomerDTO
-            {
-                Name = newCustomerDto.Name,
-                Address = newCustomerDto.Address,
-                Phone = newCustomerDto.Phone,
-                PasswordSalt = passwordSalt,
-                PasswordHash = passwordHash
-            };
-
-            await _customerService.CreateCustomerAsync(customerDto);
-
-            return StatusCode(201);
         }
+
     }
 }
+
+
+
+//_logger.LogInformation("SignUp process started for user: {Email}", newCustomerDto.Email);
+//var stopwatch = new Stopwatch();
+
+//stopwatch.Start();
+//_logger.LogInformation("Checking if user already exists");
+//stopwatch.Stop();
+//_logger.LogInformation("Time taken to check existing user: {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
+
+//[HttpPost("signup")]
+//public async Task<IActionResult> SignUp([FromBody] NewCustomerDTO newCustomerDto)
+//{
+//    var existingCustomer = await _customerService.GetCustomerByEmailAsync(newCustomerDto.Name);
+//    if (existingCustomer != null)
+//    {
+//        return Conflict("Email already exists");
+//    }
+
+//    var passwordSalt = _encryption.GenerateSaltedPassword();
+//    var passwordHash = _encryption.GenerateEncryptedPassword(passwordSalt, newCustomerDto.Password);
+//    var customerDto = _mapper.Map<CustomerDTO>(newCustomerDto);
+//    customerDto.PasswordSalt = passwordSalt;
+//    customerDto.PasswordHash = passwordHash;
+
+//    await _customerService.CreateCustomerAsync(customerDto);
+
+//    return StatusCode(201);
+//}

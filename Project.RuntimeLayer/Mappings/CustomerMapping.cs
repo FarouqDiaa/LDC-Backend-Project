@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.DTOs;
+using Project.BusinessDomainLayer.VMs;
 using Project.InfrastructureLayer.Entities;
 
 namespace Project.RuntimeLayer.Mappings
@@ -9,7 +10,8 @@ namespace Project.RuntimeLayer.Mappings
         public CustomerMappingProfile()
         {
             CreateMap<Customer, CustomerDTO>().ReverseMap();
-            CreateMap<NewCustomerDTO, Customer>();
+            CreateMap<NewCustomerVM, Customer>();
+            CreateMap<NewCustomerVM, CustomerDTO>();
         }
     }
 }

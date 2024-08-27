@@ -29,9 +29,30 @@ namespace Project.BusinessDomainLayer.Services
         public async Task CreateOrderAsync(NewOrderDTO newOrderDto)
         {
             var order = _mapper.Map<Order>(newOrderDto);
+            order.CustomerId = newOrderDto.CustomerId;
+
+            foreach (var item in newOrderDto.OrderItems)
+            {
+                var orderItem = _mapper.Map<OrderItem>(item);
+                order.OrderItems.Add(orderItem);
+            }
+
             await _unitOfWork.Orders.AddAsync(order);
             await _unitOfWork.CompleteAsync();
         }
 
+
+        public async Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId)
+        {
+            int pageCount = 25;
+            var orders = await _unitOfWork.Orders.GetAllPagedAsync(pageNumber, pageCount, customerId);
+            return _mapper.Map<IEnumerable<OrderDTO>>(orders);
+        }
+        public async Task DeleteOrderAsync(Guid id)
+        {
+            Order order = await _unitOfWork.Orders.GetByIdAsync(id) ?? throw new KeyNotFoundException("Order not found");
+            await _unitOfWork.Orders.RemoveByIdAsync(id);
+            await _unitOfWork.CompleteAsync();
+        }
     }
 }

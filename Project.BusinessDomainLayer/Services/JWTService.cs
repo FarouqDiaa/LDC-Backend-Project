@@ -19,7 +19,7 @@ namespace Project.BusinessDomainLayer.Services
             _configuration = configuration;
         }
 
-        public string GenerateToken(Guid userId, string username, bool isAdmin)
+        public string GenerateToken(Guid userId, string email, bool isAdmin)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
 
@@ -29,7 +29,7 @@ namespace Project.BusinessDomainLayer.Services
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, username),
+                new Claim(JwtRegisteredClaimNames.UniqueName, email),
                 new Claim("IsAdmin", isAdmin.ToString())
             };
 

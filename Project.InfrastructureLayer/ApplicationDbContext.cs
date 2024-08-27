@@ -22,7 +22,7 @@ namespace Project.InfrastructureLayer
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Customer>()
-                .HasIndex(c => c.Name)
+                .HasIndex(c => c.Email)
                 .IsUnique();
 
             modelBuilder.Entity<Product>()
