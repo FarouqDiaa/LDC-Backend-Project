@@ -1,4 +1,5 @@
-﻿using Project.InfrastructureLayer.Interfaces;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using Project.InfrastructureLayer.Interfaces;
 
 namespace Project.InfrastructureLayer.Interfaces
 {
@@ -6,6 +7,6 @@ namespace Project.InfrastructureLayer.Interfaces
     {
         Task<int> CompleteAsync();
 
-
+        public Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

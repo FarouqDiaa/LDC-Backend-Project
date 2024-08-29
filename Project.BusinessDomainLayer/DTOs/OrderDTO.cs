@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Project.BusinessDomainLayer.DTOs
 {
@@ -16,5 +17,7 @@ namespace Project.BusinessDomainLayer.DTOs
         public double TotalAmount { get; set; }
 
         public bool IsDeleted { get; set; }
+
+        public ICollection<OrderItemDTO> OrderItems { get; set; } = new List<OrderItemDTO>();
     }
 }

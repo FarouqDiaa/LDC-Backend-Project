@@ -29,9 +29,13 @@ namespace Project.BusinessDomainLayer.Services
             _customerRepository = customerRepository;
         }
 
-        public async Task<ProductDTO> GetProductByIdAsync(Guid id)
+        public async Task<ProductDTO> GetProductByIdAsync(Guid id, Guid customerId)
         {
+            bool isAdmin = await _customerRepository.IsAdmin(customerId);
             var product = await _productRepository.GetByIdAsync(id);
+            if (product.IsDeleted == true && isAdmin != true) {
+                product = null;
+            }
             return product == null ? throw new NotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
         }
 
@@ -45,7 +49,7 @@ namespace Project.BusinessDomainLayer.Services
             var existingProduct = await _productRepository.GetByNameAsync(newProduct.Name);
             if (existingProduct != null)
             {
-                throw new Exception("Product name used");
+                throw new ArgumentException("Product name used");
             }
             var product = _mapper.Map<Product>(newProduct);
             if (product.StockQuantity == 0) {
@@ -81,45 +85,47 @@ namespace Project.BusinessDomainLayer.Services
             return _mapper.Map<IEnumerable<ProductDTO>>(products);
         }
 
-
-        public async Task UpdateProductAsync(JsonPatchDocument<ProductDTO> patchDoc, Guid customerId, Guid productId)
+        public async Task UpdateProductAsync(EditProductVM updatedProduct, Guid customerId, Guid productId)
         {
+
             bool isAdmin = await _customerRepository.IsAdmin(customerId);
             if (!isAdmin)
             {
-                throw new AccessViolationException("UnAuthorized");
+                throw new AccessViolationException("Unauthorized");
             }
-            var existingProduct = await _productRepository.GetByIdAsync(productId) ?? throw new KeyNotFoundException("Product not found");
-            var newProduct = _mapper.Map<ProductDTO>(existingProduct);
 
-            patchDoc.ApplyTo(newProduct);
-            var validationContext = new ValidationContext(newProduct);
-            Validator.ValidateObject(newProduct, validationContext, validateAllProperties: true);
+            var existingProduct = await _productRepository.GetByIdAsync(productId)
+                                  ?? throw new KeyNotFoundException("Product not found");
 
-
-            if (newProduct.Name != existingProduct.Name)
+            if (updatedProduct.Name != null && updatedProduct.Name != existingProduct.Name)
             {
-                var oldProduct = await _productRepository.GetByNameAsync(newProduct.Name);
+                var oldProduct = await _productRepository.GetByNameAsync(updatedProduct.Name);
                 if (oldProduct != null)
                 {
-                    throw new InvalidOperationException($"The product name '{newProduct.Name}' is already in use.");
+                    throw new InvalidOperationException($"The product name '{updatedProduct.Name}' is already used");
                 }
             }
 
-            if (newProduct.StockQuantity != 0 && existingProduct.StockQuantity == 0)
+            string newStatus = existingProduct.Status;
+            if (updatedProduct.StockQuantity != existingProduct.StockQuantity)
             {
-                newProduct.Status = "InStock";
-            }
-            if (newProduct.StockQuantity == 0 && existingProduct.StockQuantity != 0)
-            {
-                newProduct.Status = "OutOfStock";
+                if (updatedProduct.StockQuantity > 0)
+                {
+                    newStatus = "InStock";
+                }
+                else
+                {
+                    newStatus = "OutOfStock";
+                }
             }
 
-            var resultProduct = _mapper.Map<Product>(newProduct);
+            var resultProduct = _mapper.Map(updatedProduct, existingProduct);
+            resultProduct.Status = newStatus;
 
             _productRepository.Update(resultProduct);
             await _unitOfWork.CompleteAsync();
         }
+
 
         public async Task DeleteProductAsync(Guid id,Guid customerId)
         {

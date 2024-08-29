@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -15,18 +16,14 @@ namespace Project.PresentationLayer.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly ICustomerService _customerService;
-        private readonly IMapper _mapper;
         private readonly JwtService _jwtService;
         private readonly ILogger<CustomerController> _logger;
 
-        public ProductController(IProductService productService, IMapper mapper, JwtService jwtService, ILogger<CustomerController> logger, ICustomerService customerService)
+        public ProductController(IProductService productService, JwtService jwtService, ILogger<CustomerController> logger)
         {
             _productService = productService;
-            _mapper = mapper;
             _jwtService = jwtService;
             _logger = logger;
-            _customerService = customerService;
         }
 
         [HttpGet("getallproducts/{id}")]
@@ -39,25 +36,27 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (NotFoundException e)
             {
-                _logger.LogWarning(e, "Product not found for ID {ProductId}", id);
-                return NotFound(e);
+                _logger.LogWarning(e.Message);
+                return NotFound(new { Message = e.Message });
             }
             catch (ArgumentException e) {
-                _logger.LogError(e, "Error retrieving product by ID {ProductId}", id);
-                return BadRequest(e);
+                _logger.LogError(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
 
-        [HttpGet("getproduct/{id}")]
-        public async Task<IActionResult> GetProductById(Guid id)
+        [HttpGet("getproduct/{id}/{customerId}")]
+        public async Task<IActionResult> GetProductById(Guid id, Guid customerId)
         {
             try
             {
-                var product = await _productService.GetProductByIdAsync(id);
+                var product = await _productService.GetProductByIdAsync(id, customerId);
                 return Ok(product);
             }
-            catch (NotFoundException e) {
-                return NotFound(e);
+            catch (NotFoundException e)
+            {
+                _logger.LogWarning(e.Message);
+                return NotFound(new { Message = e.Message });
             }
         }
 
@@ -67,39 +66,46 @@ namespace Project.PresentationLayer.Controllers
             try
             {
                 await _productService.CreateProductAsync(newProduct, id);
-                return Ok("Product Added Successfully");
+                return Ok(new { Message = "Product Added Successfully" });
             }
             catch (AccessViolationException e)
             {
-                return Unauthorized(e);
+                _logger.LogWarning(e.Message);
+                return Unauthorized(new { Message = e.Message });
             }
-            catch (Exception e) { 
-            return BadRequest(e);
+            catch (ArgumentException e)
+            {
+                _logger.LogWarning(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
 
 
-        [HttpPatch("updateproduct/{id}/{customerId}")]
-        public async Task<IActionResult> PatchProduct(Guid id,Guid customerId ,[FromBody][Required] JsonPatchDocument<ProductDTO> patchDoc)
+        [HttpPut("updateproduct/{id}/{customerId}")]
+        public async Task<IActionResult> UpdateProduct(Guid id, Guid customerId, [FromBody][Required] EditProductVM updatedProduct)
         {
-            if (patchDoc == null)
-            {
-                return BadRequest("Patch document is null");
-            }
             try
             {
-                await _productService.UpdateProductAsync(patchDoc, customerId, id);
-                return Ok("Updated Successfully");
+                await _productService.UpdateProductAsync(updatedProduct, customerId, id);
+                return Ok(new { Message = "Updated Successfully" });
             }
             catch (AccessViolationException e)
             {
-                return Unauthorized(e);
+                _logger.LogWarning(e.Message);
+                return Unauthorized(new { Message = e.Message });
             }
-            catch (Exception e) 
+            catch (KeyNotFoundException e)
             {
-                return BadRequest(e);
+                _logger.LogWarning(e.Message);
+                return NotFound(new { Message = e.Message });
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogWarning(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
+
 
         [HttpDelete("deleteproduct/{id}/{customerId}")]
         public async Task<IActionResult> DeleteProduct(Guid id, Guid customerId)
@@ -111,10 +117,13 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (AccessViolationException e)
             {
-                return Unauthorized(e);
+                _logger.LogWarning(e.Message);
+                return Unauthorized(new { Message = e.Message });
             }
-            catch (KeyNotFoundException e) {
-                return NotFound(e);
+            catch (KeyNotFoundException e)
+            {
+                _logger.LogWarning(e.Message);
+                return NotFound(new { Message = e.Message });
             }
         }
 
@@ -123,28 +132,14 @@ namespace Project.PresentationLayer.Controllers
 
 
 
-
-//[
-//{ "op": "replace", "path": "/ProductName", "value": "New Product Name" },
-//{ "op": "replace", "path": "/Price", "value": 99.99 }
-//]
-
-//[HttpPost("addproduct/{id}")]
-//[Authorize]
-//public async Task<IActionResult> AddProduct(Guid id, NewProductDTO newProduct)
-//{
 //    var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
-
 //    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
 //    {
-//        await _productService.CreateProductAsync(newProduct);
-//        return Ok("Product added successfully");
 //    }
 //    else
 //    {
 //        return Forbid("You do not have permission to add products");
 //    }
-//}
 
 
 //[HttpPatch("updateproduct/{id}")]
@@ -184,30 +179,5 @@ namespace Project.PresentationLayer.Controllers
 //    else
 //    {
 //        return Forbid("You do not have permission to update products");
-//    }
-//}
-
-
-//[HttpDelete("deleteproduct/{id}")]
-//[Authorize]
-//public async Task<IActionResult> DeleteProduct(Guid id)
-//{
-//    var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
-
-//    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
-//    {
-//        var existingProduct = await _productService.GetProductByIdAsync(id);
-//        if (existingProduct == null)
-//        {
-//            return NotFound("Product not found");
-//        }
-
-//        await _productService.DeleteProductAsync(id);
-
-//        return Ok("Product deleted successfully");
-//    }
-//    else
-//    {
-//        return Forbid("You do not have permission to delete products");
 //    }
 //}

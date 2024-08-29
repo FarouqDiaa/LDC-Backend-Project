@@ -11,9 +11,9 @@ namespace Project.InfrastructureLayer.Repositories
         {
             _context = context;
         }
-        public async Task<OrderItem> GetByIdAsync(Guid id)
+        public async Task<IEnumerable<OrderItem>> GetByIdAsync(Guid id)
         {
-            return await _context.Set<OrderItem>().SingleOrDefaultAsync(o => o.OrderId == id);
+            return await _context.OrderItems.Where(o => o.OrderId == id).ToListAsync();
         }
 
         public async Task AddAsync(OrderItem orderItem)

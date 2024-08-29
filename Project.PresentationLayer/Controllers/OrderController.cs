@@ -14,13 +14,11 @@ namespace Project.PresentationLayer.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        private readonly IMapper _mapper;
         private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderService orderService, IMapper mapper, ILogger<OrderController> logger)
+        public OrderController(IOrderService orderService, ILogger<OrderController> logger)
         {
             _orderService = orderService;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -34,25 +32,28 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (NotFoundException e)
             {
-                return Conflict(e);
-            }
-            catch (ArgumentNullException e)
-            {
-                return NotFound(e);
+                return NotFound(new {Message = e.Message });
             }
         }
 
-        [HttpPost("addorder")]
-        public async Task<IActionResult> AddOrder(NewOrderVM newOrder)
+        [HttpPost("addorder/{customerId}")]
+        public async Task<IActionResult> AddOrder(Guid customerId, NewOrderVM newOrder)
         {
             try
             {
-                await _orderService.CreateOrderAsync(newOrder);
+                await _orderService.CreateOrderAsync(newOrder, customerId);
                 return Ok("Order added successfully");
             }
             catch (InvalidOperationException e)
             {
-                return Conflict(e);
+                return Conflict(new { Message = e.Message });
+            }
+            catch (KeyNotFoundException e) {
+                return NotFound(new { Message = e.Message });
+            }
+            catch(NotFoundException e)
+            {
+                return NotFound(new { Message = e.Message });
             }
         }
 
@@ -67,7 +68,7 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (NotFoundException e)
             {
-                return NotFound(e);
+                return NotFound(new { Message = e.Message });
             }
         }
     }

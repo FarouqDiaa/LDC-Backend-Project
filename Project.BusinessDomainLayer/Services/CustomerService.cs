@@ -5,6 +5,7 @@ using Project.InfrastructureLayer.Entities;
 using AutoMapper;
 using Project.BusinessDomainLayer.VMs;
 using OpenQA.Selenium;
+using Project.InfrastructureLayer.Migrations;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -26,7 +27,7 @@ namespace Project.BusinessDomainLayer.Services
         public async Task<CustomerDTO> GetCustomerByIdAsync(Guid id)
         {
             var customer = await _customerRepository.GetByIdAsync(id);
-            if (customer == null) throw new NotFoundException("Customer not found");
+            if (customer == null) throw new NotFoundException();
 
 
             return _mapper.Map<CustomerDTO>(customer);
@@ -55,10 +56,10 @@ namespace Project.BusinessDomainLayer.Services
 
         public async Task<CustomerDTO> AuthenticateAsync(string email, string password)
         {
-            Customer customer = await _customerRepository.GetByEmailAsync(email) ?? throw new ArgumentNullException(nameof(CustomerDTO), "Email not registered");
+            Customer customer = await _customerRepository.GetByEmailAsync(email) ?? throw new ArgumentNullException("Email not registered");
             bool isValidPassword = _encryption.ValidateEncryptedData(password, customer.PasswordHash, customer.PasswordSalt);
 
-            if (!isValidPassword)throw new InvalidOperationException("Username or password is incorrect");
+            if (!isValidPassword)throw new InvalidOperationException("Email or password is incorrect");
 
             var customerDto = _mapper.Map<CustomerDTO>(customer);
             return customerDto;

@@ -35,16 +35,19 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (ArgumentNullException e)
             {
-                return NotFound(e);
+                _logger.LogWarning("Email is not registered {email}", login.Email);
+                return NotFound(new { Message = e.Message });
             }
-            catch (InvalidOperationException e) { 
-                return BadRequest(e);
+            catch (InvalidOperationException e) {
+                _logger.LogWarning(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
 
         [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody][Required] NewCustomerVM newCustomer)
+        public async Task<IActionResult> SignUp([FromBody] NewCustomerVM newCustomer)
         {
+
             try
             {
                 await _customerService.CreateCustomerAsync(newCustomer);
@@ -52,7 +55,8 @@ namespace Project.PresentationLayer.Controllers
             }
             catch (InvalidOperationException e)
             {
-                return BadRequest(e);
+                _logger.LogWarning(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
 

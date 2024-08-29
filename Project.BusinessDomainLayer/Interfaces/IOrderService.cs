@@ -7,7 +7,7 @@ namespace Project.BusinessDomainLayer.Interfaces
     {
         public Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId);
         public Task<OrderDTO> GetOrderByIdAsync(Guid id);
-        public Task CreateOrderAsync(NewOrderVM newOrderDto);
+        public Task CreateOrderAsync(NewOrderVM newOrderDto, Guid customerId);
         public Task DeleteOrderAsync(Guid id, Guid customerId);
     }
 }
