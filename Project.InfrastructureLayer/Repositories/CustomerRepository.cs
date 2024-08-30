@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
 using Project.InfrastructureLayer.Migrations;
 
 namespace Project.InfrastructureLayer.Repositories
@@ -20,7 +20,7 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Customer> GetByIdAsync(Guid id)
         {
-            return await _context.Set<Customer>().SingleOrDefaultAsync(c => c.CustomerId == id);
+            return await _context.Set<Customer>().SingleOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task AddAsync(Customer customer)
@@ -53,7 +53,7 @@ namespace Project.InfrastructureLayer.Repositories
         }
 
 
-        public async Task<bool> CustomerExistsAsync(string email)
+        public async Task<bool> IsCustomerExistsAsync(string email)
         {
             var cacheKey = $"CustomerExists-{email}";
             if (!_cache.TryGetValue(cacheKey, out bool exists))
@@ -72,14 +72,14 @@ namespace Project.InfrastructureLayer.Repositories
 
             return exists;
         }
-        public async Task<bool> CustomerExistsWithIdAsync(Guid customerId)
+        public async Task<bool> IsCustomerExistsWithIdAsync(Guid customerId)
         {
             var cacheKey = $"CustomerExists-{customerId}";
             if (!_cache.TryGetValue(cacheKey, out bool exists))
             {
                 exists = await _context.Customers
                                        .AsNoTracking()
-                                       .AnyAsync(c => c.CustomerId == customerId);
+                                       .AnyAsync(c => c.Id == customerId);
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
@@ -98,7 +98,7 @@ namespace Project.InfrastructureLayer.Repositories
             if (!_cache.TryGetValue(cacheKey, out bool isAdmin))
             {
                 isAdmin = await _context.Customers.AsNoTracking()
-                                                  .Where(c => c.CustomerId == id)
+                                                  .Where(c => c.Id == id)
                                                   .Select(c => c.IsAdmin)
                                                   .FirstOrDefaultAsync();
 

@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
-using Project.BusinessDomainLayer.Interfaces;
+using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
 using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
+using Project.BusinessDomainLayer.DTOs;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -14,15 +16,15 @@ namespace Project.PresentationLayer.Controllers
         private readonly ICustomerService _customerService;
         private readonly IMapper _mapper;
         private readonly IEncryption _encryption;
-        private readonly JwtService _jwtService;
+        //private readonly IJwtService _jwtService;
         private readonly ILogger<CustomerController> _logger;
 
-        public CustomerController(ICustomerService customerService, IMapper mapper, IEncryption encryption, JwtService jwtService, ILogger<CustomerController> logger)
+        public CustomerController(ICustomerService customerService, IMapper mapper, IEncryption encryption, ILogger<CustomerController> logger)
         {
             _customerService = customerService;
             _mapper = mapper;
             _encryption = encryption;
-            _jwtService = jwtService;
+            //_jwtService = jwtService;
             _logger = logger;
         }
 
@@ -30,8 +32,9 @@ namespace Project.PresentationLayer.Controllers
         public async Task<IActionResult> LogIn([FromBody][Required] LoginVM login)
         {
             try {
-                var customer = await _customerService.AuthenticateAsync(login.Email, login.Password);
-                return Ok(customer);
+                var logInDTO = _mapper.Map<LogInDTO>(login);
+                var customer = await _customerService.AuthenticateAsync(logInDTO);
+                return Ok(_mapper.Map<CustomerVM>(customer));
             }
             catch (ArgumentNullException e)
             {
@@ -44,14 +47,15 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody] NewCustomerVM newCustomer)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] NewCustomerVM newCustomer)
         {
 
             try
             {
-                await _customerService.CreateCustomerAsync(newCustomer);
-                return Ok("Successfully Signed Up");
+                var newCustomerDTO = _mapper.Map<NewCustomerDTO>(newCustomer);
+                var customer = await _customerService.CreateCustomerAsync(newCustomerDTO);
+                return Ok(_mapper.Map<CustomerVM>(customer));
             }
             catch (InvalidOperationException e)
             {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Project.BusinessDomainLayer.DTOs
 {
-    public class UpdateProductDTO
+    public class NewProductDTO
     {
         [Required(ErrorMessage = "Name is required")]
         [StringLength(100, MinimumLength = 4, ErrorMessage = "Name must be at least 4 characters and no more than 100 characters")]
@@ -16,10 +16,9 @@ namespace Project.BusinessDomainLayer.DTOs
         [StringLength(50, ErrorMessage = "Type shouldn't be over 50 characters")]
         public string Type { get; set; }
 
-        [Required(ErrorMessage = "Cost is required")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be a positive value.")]
+        [Required(ErrorMessage = "Amount is required")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be a positive value")]
         public double Cost { get; set; }
-
 
         [Required(ErrorMessage = "StockQuantity is required")]
         [Range(0, int.MaxValue, ErrorMessage = "StockQuantity must be a positive value")]

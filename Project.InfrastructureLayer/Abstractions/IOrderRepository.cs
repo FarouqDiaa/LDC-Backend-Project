@@ -1,6 +1,6 @@
 ﻿using Project.InfrastructureLayer.Entities;
 
-namespace Project.InfrastructureLayer.Interfaces
+namespace Project.InfrastructureLayer.Abstractions
 {
     public interface IOrderRepository
     {

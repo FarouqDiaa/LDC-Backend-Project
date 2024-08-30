@@ -12,7 +12,9 @@ namespace Project.RuntimeLayer.Mappings
             CreateMap<Order, OrderDTO>().ReverseMap();
             CreateMap<OrderItem, OrderItemDTO>().ReverseMap();
             CreateMap<NewOrderVM, Order>().ReverseMap();
+            CreateMap<NewOrderVM, NewOrderDTO>();
             CreateMap<NewOrderItemVM, OrderItem>().ReverseMap();
+            CreateMap<NewOrderItemVM,  OrderItemRequestDTO>().ReverseMap(); 
         }
     }
 }

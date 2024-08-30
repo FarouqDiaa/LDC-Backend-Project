@@ -1,6 +1,6 @@
 ﻿using Project.BusinessDomainLayer.DTOs;
-using Project.BusinessDomainLayer.Interfaces;
-using Project.InfrastructureLayer.Interfaces;
+using Project.BusinessDomainLayer.Abstractions;
+using Project.InfrastructureLayer.Abstractions;
 using Project.InfrastructureLayer.Entities;
 using AutoMapper;
 using Project.BusinessDomainLayer.VMs;
@@ -33,7 +33,7 @@ namespace Project.BusinessDomainLayer.Services
             return _mapper.Map<CustomerDTO>(customer);
         }
 
-        public async Task CreateCustomerAsync(NewCustomerVM newCustomer)
+        public async Task<CustomerDTO> CreateCustomerAsync(NewCustomerDTO newCustomer)
         {
             var existingCustomer = await _customerRepository.GetByEmailAsync(newCustomer.Email);
             if (existingCustomer != null) {
@@ -42,6 +42,7 @@ namespace Project.BusinessDomainLayer.Services
             var customer = GeneratePassword(_mapper.Map<Customer>(newCustomer), newCustomer.Password);
             await _customerRepository.AddAsync(customer);
             await _unitOfWork.CompleteAsync();
+            return _mapper.Map<CustomerDTO>(customer);
         }
 
         public  Customer GeneratePassword(Customer customer,string password)
@@ -54,8 +55,10 @@ namespace Project.BusinessDomainLayer.Services
 
         }
 
-        public async Task<CustomerDTO> AuthenticateAsync(string email, string password)
+        public async Task<CustomerDTO> AuthenticateAsync(LogInDTO logInDTO)
         {
+            string email = logInDTO.Email, password = logInDTO.Password;
+
             Customer customer = await _customerRepository.GetByEmailAsync(email) ?? throw new ArgumentNullException("Email not registered");
             bool isValidPassword = _encryption.ValidateEncryptedData(password, customer.PasswordHash, customer.PasswordSalt);
 

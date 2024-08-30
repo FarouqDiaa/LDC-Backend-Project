@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
 using System.Linq;
 
 namespace Project.InfrastructureLayer.Repositories
@@ -15,7 +15,7 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Order> GetByIdAsync(Guid id)
         {
-            return await _context.Orders.SingleOrDefaultAsync(o => o.OrderId == id);
+            return await _context.Orders.SingleOrDefaultAsync(o => o.Id == id);
         }
 
         public async Task AddAsync(Order order)

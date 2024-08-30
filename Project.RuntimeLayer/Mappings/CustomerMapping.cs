@@ -11,6 +11,7 @@ namespace Project.RuntimeLayer.Mappings
         {
             CreateMap<Customer, CustomerDTO>().ReverseMap();
             CreateMap<NewCustomerVM, Customer>();
+            CreateMap<NewCustomerVM, NewCustomerDTO>();
             CreateMap<NewCustomerVM, CustomerDTO>();
         }
     }

@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.DTOs;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
-using Project.BusinessDomainLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
+using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.VMs;
 using OpenQA.Selenium;
 using Project.InfrastructureLayer.Repositories;
@@ -42,9 +42,9 @@ namespace Project.BusinessDomainLayer.Services
             return orderDTO;
         }
 
-        public async Task CreateOrderAsync(NewOrderVM newOrder, Guid customerId)
+        public async Task CreateOrderAsync(NewOrderDTO newOrder, Guid customerId)
         {
-            bool exists = await _customerRepository.CustomerExistsWithIdAsync(customerId);
+            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
             if (!exists)
             {
                 throw new KeyNotFoundException("Customer not found");
@@ -85,7 +85,7 @@ namespace Project.BusinessDomainLayer.Services
 
                         var orderItem = new OrderItem
                         {
-                            OrderId = order.OrderId,
+                            OrderId = order.Id,
                             ProductId = item.ProductId,
                             Quantity = item.Quantity,
                             Cost = product.Cost * item.Quantity
@@ -113,7 +113,7 @@ namespace Project.BusinessDomainLayer.Services
 
         public async Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId)
         {
-            bool exists = await _customerRepository.CustomerExistsWithIdAsync(customerId);
+            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
             if (!exists) {
                 throw new NotFoundException("User not found");
             }
@@ -123,7 +123,7 @@ namespace Project.BusinessDomainLayer.Services
         }
         public async Task DeleteOrderAsync(Guid id, Guid customerId)
         {
-            bool exists = await _customerRepository.CustomerExistsWithIdAsync(customerId);
+            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
             if (!exists)
             {
                 throw new NotFoundException("User not found");

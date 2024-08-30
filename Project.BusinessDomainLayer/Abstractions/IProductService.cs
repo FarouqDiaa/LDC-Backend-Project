@@ -2,15 +2,15 @@
 using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.VMs;
 
-namespace Project.BusinessDomainLayer.Interfaces
+namespace Project.BusinessDomainLayer.Abstractions
 {
     public interface IProductService
     {
         Task<ProductDTO> GetProductByIdAsync(Guid id, Guid customerId);
-        Task CreateProductAsync(NewProductVM newProduct, Guid CustomerId);
+        Task CreateProductAsync(NewProductDTO newProduct, Guid CustomerId);
         Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, Guid customerId);
         Task DeleteProductAsync(Guid id, Guid customerId);
-        Task UpdateProductAsync(EditProductVM updatedProduct, Guid customerId, Guid productId);
+        Task UpdateProductAsync(UpdateProductDTO updatedProduct, Guid customerId, Guid productId);
         Task<ProductDTO> GetProductByNameAsync(string name);
     }
 }

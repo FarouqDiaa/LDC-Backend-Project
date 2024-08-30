@@ -1,6 +1,6 @@
 ﻿using Project.InfrastructureLayer.Entities;
 
-namespace Project.InfrastructureLayer.Interfaces
+namespace Project.InfrastructureLayer.Abstractions
 {
     public interface IProductRepository
     {
@@ -13,7 +13,7 @@ namespace Project.InfrastructureLayer.Interfaces
         public Task RemoveByIdAsync(Guid id);
         public void Update(Product product);
 
-        public Task<bool> ProductExistsAsync(Guid id);
+        public Task<bool> IsProductExistsAsync(Guid id);
 
     }
 }

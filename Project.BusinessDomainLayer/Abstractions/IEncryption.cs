@@ -1,4 +1,4 @@
-﻿namespace Project.BusinessDomainLayer.Interfaces
+﻿namespace Project.BusinessDomainLayer.Abstractions
 {
     public interface IEncryption
     {

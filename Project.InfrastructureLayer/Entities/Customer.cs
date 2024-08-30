@@ -3,9 +3,8 @@
 
 namespace Project.InfrastructureLayer.Entities
 {
-    public class Customer
+    public class Customer : BaseEntity
     {
-        public Guid CustomerId { get; set; } = Guid.NewGuid();
 
         public string Name { get; set; } = String.Empty;
         public string Email { get; set; } = String.Empty;
@@ -21,11 +20,6 @@ namespace Project.InfrastructureLayer.Entities
 
         public bool IsAdmin { get; init; } = false;
 
-        public DateTime CreatedOn { get; set; }
-
-        public DateTime UpdatedOn { get; set; }
-
-        public bool IsDeleted { get; set; } = false;
 
         public ICollection<Order> Orders { get; set; } = new List<Order>();
     }

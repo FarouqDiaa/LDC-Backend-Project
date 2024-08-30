@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
 
 
 namespace Project.InfrastructureLayer.Repositories
@@ -18,7 +18,7 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Product> GetByIdAsync(Guid id)
         {
-            return await _context.Products.SingleOrDefaultAsync(p => p.ProductId == id);
+            return await _context.Products.SingleOrDefaultAsync(p => p.Id == id);
         }
 
 
@@ -102,14 +102,14 @@ namespace Project.InfrastructureLayer.Repositories
 
 
 
-        public async Task<bool> ProductExistsAsync(Guid id)
+        public async Task<bool> IsProductExistsAsync(Guid id)
         {
             var cacheKey = $"ProductExists-{id}";
             if (!_cache.TryGetValue(cacheKey, out bool exists))
             {
                 exists = await _context.Products
                                        .AsNoTracking()
-                                       .AnyAsync(p => p.ProductId == id);
+                                       .AnyAsync(p => p.Id == id);
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {

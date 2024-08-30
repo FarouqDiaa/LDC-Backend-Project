@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Project.BusinessDomainLayer.Interfaces;
+using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -15,11 +15,13 @@ namespace Project.PresentationLayer.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly ILogger<OrderController> _logger;
+        private readonly IMapper _mapper;
 
-        public OrderController(IOrderService orderService, ILogger<OrderController> logger)
+        public OrderController(IOrderService orderService, ILogger<OrderController> logger, IMapper mapper)
         {
             _orderService = orderService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet("getallorders/{customerId}")]
@@ -41,7 +43,8 @@ namespace Project.PresentationLayer.Controllers
         {
             try
             {
-                await _orderService.CreateOrderAsync(newOrder, customerId);
+                var newOrderDTO = _mapper.Map<NewOrderDTO>(newOrder);
+                await _orderService.CreateOrderAsync(newOrderDTO, customerId);
                 return Ok("Order added successfully");
             }
             catch (InvalidOperationException e)

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Project.BusinessDomainLayer.Interfaces;
+using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +17,15 @@ namespace Project.PresentationLayer.Controllers
     {
         private readonly IProductService _productService;
         private readonly JwtService _jwtService;
-        private readonly ILogger<CustomerController> _logger;
+        private readonly ILogger<ProductController> _logger;
+        private readonly IMapper _mapper;
 
-        public ProductController(IProductService productService, JwtService jwtService, ILogger<CustomerController> logger)
+        public ProductController(IProductService productService, JwtService jwtService, ILogger<ProductController> logger, IMapper mapper)
         {
             _productService = productService;
             _jwtService = jwtService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet("getallproducts/{id}")]
@@ -65,7 +67,8 @@ namespace Project.PresentationLayer.Controllers
         {
             try
             {
-                await _productService.CreateProductAsync(newProduct, id);
+                var newProductDTO = _mapper.Map<NewProductDTO>(newProduct);
+                await _productService.CreateProductAsync(newProductDTO, id);
                 return Ok(new { Message = "Product Added Successfully" });
             }
             catch (AccessViolationException e)
@@ -86,7 +89,8 @@ namespace Project.PresentationLayer.Controllers
         {
             try
             {
-                await _productService.UpdateProductAsync(updatedProduct, customerId, id);
+                var updateProductDTO = _mapper.Map<UpdateProductDTO>(updatedProduct);
+                await _productService.UpdateProductAsync(updateProductDTO, customerId, id);
                 return Ok(new { Message = "Updated Successfully" });
             }
             catch (AccessViolationException e)

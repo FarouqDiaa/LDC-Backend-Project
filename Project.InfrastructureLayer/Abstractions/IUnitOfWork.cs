@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
-using Project.InfrastructureLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
 
-namespace Project.InfrastructureLayer.Interfaces
+namespace Project.InfrastructureLayer.Abstractions
 {
     public interface IUnitOfWork : IDisposable
     {

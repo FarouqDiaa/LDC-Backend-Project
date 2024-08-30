@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.DTOs;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
-using Project.BusinessDomainLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
+using Project.BusinessDomainLayer.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
@@ -39,7 +39,7 @@ namespace Project.BusinessDomainLayer.Services
             return product == null ? throw new NotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
         }
 
-        public async Task CreateProductAsync(NewProductVM newProduct, Guid customerId)
+        public async Task CreateProductAsync(NewProductDTO newProduct, Guid customerId)
         {
             bool isAdmin = await _customerRepository.IsAdmin(customerId);
             if (!isAdmin) {
@@ -85,7 +85,7 @@ namespace Project.BusinessDomainLayer.Services
             return _mapper.Map<IEnumerable<ProductDTO>>(products);
         }
 
-        public async Task UpdateProductAsync(EditProductVM updatedProduct, Guid customerId, Guid productId)
+        public async Task UpdateProductAsync(UpdateProductDTO updatedProduct, Guid customerId, Guid productId)
         {
 
             bool isAdmin = await _customerRepository.IsAdmin(customerId);
@@ -134,7 +134,7 @@ namespace Project.BusinessDomainLayer.Services
             {
                 throw new AccessViolationException("UnAuthorized");
             }
-            var product = await _productRepository.ProductExistsAsync(id);
+            var product = await _productRepository.IsProductExistsAsync(id);
             if (product)
             {
                 await _productRepository.RemoveByIdAsync(id);

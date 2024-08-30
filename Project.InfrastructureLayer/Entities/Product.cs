@@ -3,9 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Project.InfrastructureLayer.Entities
 {
-    public class Product
+    public class Product : BaseEntity
     {
-        public Guid ProductId { get; set; }
 
         public string Name { get; set; }
 
@@ -18,12 +17,6 @@ namespace Project.InfrastructureLayer.Entities
         public double Cost { get; set; }
 
         public int StockQuantity { get; set; }
-
-        public DateTime CreatedOn { get; set; }
-
-        public DateTime UpdatedOn { get; set; }
-
-        public bool IsDeleted { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Project.InfrastructureLayer.Entities;
-using Project.InfrastructureLayer.Interfaces;
+using Project.InfrastructureLayer.Abstractions;
 
 namespace Project.InfrastructureLayer.Repositories
 {

@@ -12,6 +12,8 @@ namespace Project.RuntimeLayer.Mappings
             CreateMap<Product, ProductDTO>().ReverseMap();
             CreateMap<NewProductVM, Product>();
             CreateMap<EditProductVM, Product>();
+            CreateMap<EditProductVM, UpdateProductDTO>();
+            CreateMap<NewProductVM, NewProductDTO>();
         }
     }
 }

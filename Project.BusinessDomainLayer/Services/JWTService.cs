@@ -1,16 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
+using Project.BusinessDomainLayer.Abstractions;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Project.BusinessDomainLayer.Services
 {
-    public class JwtService
+    public class JwtService:IJWTService
     {
         private readonly IConfiguration _configuration;
 

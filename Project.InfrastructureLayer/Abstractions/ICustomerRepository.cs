@@ -1,6 +1,6 @@
 ﻿using Project.InfrastructureLayer.Entities;
 
-namespace Project.InfrastructureLayer.Interfaces
+namespace Project.InfrastructureLayer.Abstractions
 {
     public interface ICustomerRepository
     {
@@ -8,8 +8,8 @@ namespace Project.InfrastructureLayer.Interfaces
         public Task AddAsync(Customer customer);
         public Task<Customer> GetByEmailAsync(string email);
 
-        public Task<bool> CustomerExistsAsync(string email);
-        public Task<bool> CustomerExistsWithIdAsync(Guid id);
+        public Task<bool> IsCustomerExistsAsync(string email);
+        public Task<bool> IsCustomerExistsWithIdAsync(Guid id);
 
         public Task<bool> IsAdmin(Guid id);
     }
