@@ -8,6 +8,7 @@ using OpenQA.Selenium;
 using Project.InfrastructureLayer.Repositories;
 using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
 using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
+using Project.BusinessDomainLayer.Exceptions.OrderExceptions;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -29,22 +30,7 @@ namespace Project.BusinessDomainLayer.Services
             _productRepository = productRepository;
             _orderItemRepository = orderItemRepository;
         }
-        public async Task<OrderDTO> GetOrderByIdAsync(Guid id)
-        {
-            var order = await _orderRepository.GetByIdAsync(id);
-            if (order == null) return null;
-
-            var orderItems = await _orderItemRepository.GetByIdAsync(id);
-
-            var orderItemDTOs = _mapper.Map<ICollection<NewOrderItemDTO>>(orderItems);
-
-            var orderDTO = _mapper.Map<OrderDTO>(order);
-            orderDTO.OrderItems = orderItemDTOs;
-
-            return orderDTO;
-        }
-
-        public async Task CreateOrderAsync(NewOrderDTO newOrder)
+        public async Task<OrderDTO> CreateOrderAsync(NewOrderDTO newOrder)
         {
 
             bool exists = await _customerRepository.IsCustomerExistsByIdAsync(newOrder.CustomerId);
@@ -58,7 +44,7 @@ namespace Project.BusinessDomainLayer.Services
                 try
                 {
                     var order = _mapper.Map<Order>(newOrder);
-                    order.OrderItems = null;
+                    order.OrderItems = new List<OrderItem>();
                     await _orderRepository.AddAsync(order);
                     await _unitOfWork.CompleteAsync();
 
@@ -87,14 +73,15 @@ namespace Project.BusinessDomainLayer.Services
                         };
 
                         await _orderItemRepository.AddAsync(orderItem);
-
+                        order.OrderItems.Add(orderItem);
                         order.Amount += orderItem.Cost;
                     }
 
-                    order.TotalAmount = order.Amount + order.Tax * order.Amount;
+                    order.TotalAmount = order.Amount + (order.Tax * order.Amount);
 
                     await _unitOfWork.CompleteAsync();
                     await transaction.CommitAsync();
+                    return _mapper.Map<OrderDTO>(order);
                 }
                 catch
                 {
@@ -108,22 +95,18 @@ namespace Project.BusinessDomainLayer.Services
 
         public async Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId)
         {
-            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
+            bool exists = await _customerRepository.IsCustomerExistsByIdAsync(customerId);
             if (!exists) {
-                throw new NotFoundException("User not found");
+                throw new InvalidCustomerIdException("InValid Customer Id");
             }
             int pageCount = 25;
             var orders = await _orderRepository.GetAllPagedAsync(pageNumber, pageCount, customerId);
-            return orders == null ? throw new NotFoundException("User has no orders") : _mapper.Map<IEnumerable<OrderDTO>>(orders);
+            return orders == null ? throw new OrderNotFoundException("User has no orders") : _mapper.Map<IEnumerable<OrderDTO>>(orders);
         }
-        public async Task DeleteOrderAsync(Guid id, Guid customerId)
+
+        public async Task DeleteOrderAsync(Guid id)
         {
-            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
-            if (!exists)
-            {
-                throw new NotFoundException("User not found");
-            }
-            Order order = await _orderRepository.GetByIdAsync(id) ?? throw new NotFoundException("Order not found");
+            Order order = await _orderRepository.GetByIdAsync(id) ?? throw new OrderNotFoundException("InValid Order Id");
             await _orderRepository.RemoveByIdAsync(id);
             await _unitOfWork.CompleteAsync();
         }

@@ -9,12 +9,15 @@ namespace Project.RuntimeLayer.Mappings
     {
         public OrderMappingProfile()
         {
-            CreateMap<Order, OrderDTO>().ReverseMap();
             CreateMap<OrderItem, NewOrderItemDTO>().ReverseMap();
             CreateMap<OrderVM, Order>().ReverseMap();
             CreateMap<OrderVM, NewOrderDTO>();
             CreateMap<OrderItemVM, OrderItem>().ReverseMap();
             CreateMap<OrderItemVM,  OrderItemDTO>().ReverseMap(); 
+            CreateMap<Order, OrderDTO>()
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems)).ReverseMap();
+            CreateMap<OrderItem, OrderItemDTO>();
+            CreateMap<OrderDTO, OrderResVM>();
         }
     }
 }

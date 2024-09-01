@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using OpenQA.Selenium;
 using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
+using Project.BusinessDomainLayer.Exceptions.OrderExceptions;
 using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
 using System.Net;
 using ErrorResponse = Project.BusinessDomainLayer.Responses.ErrorResponse;
@@ -74,6 +75,11 @@ namespace Project.PresentationLayer.Middleware
             {
                 _logger.LogWarning(ex, "Product quantity exception caught in middleware");
                 await HandleExceptionAsync(context, HttpStatusCode.BadRequest, ex.Message);
+            }
+            catch (OrderNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Order not found exception caught in middleware");
+                await HandleExceptionCustomAsync(context, HttpStatusCode.BadRequest, ex.Message);
             }
         }
 

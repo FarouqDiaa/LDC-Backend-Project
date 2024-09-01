@@ -16,7 +16,7 @@ namespace Project.RuntimeLayer.Mappings
             CreateMap<Customer, CustomerResVM>();
             CreateMap<NewCustomerDTO, Customer>();
             CreateMap<CustomerDTO, CustomerResVM>();
-            CreateMap<LogInVM, LogInDTO>();
+            CreateMap<LoginVM, LoginDTO>();
         }
     }
 }

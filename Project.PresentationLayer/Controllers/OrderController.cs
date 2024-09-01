@@ -2,9 +2,10 @@
 using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
 using Project.BusinessDomainLayer.Responses;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -41,17 +42,66 @@ namespace Project.PresentationLayer.Controllers
                 };
                 return Ok(successResponse);
             }
-            catch (InvalidOperationException e)
+            catch (DbUpdateException ex)
             {
-                return Conflict(new { Message = e.Message });
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Order"
+                };
+                return BadRequest(errorResponse);
             }
-            catch (KeyNotFoundException e)
+            catch (SqlException ex)
             {
-                return NotFound(new { Message = e.Message });
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Order"
+                };
+                return BadRequest(errorResponse);
             }
-            catch (NotFoundException e)
+        }
+
+
+        [HttpDelete("deleteorder/{id}")]
+        public async Task<IActionResult> DeleteOrder(Guid id)
+        {
+            try
             {
-                return NotFound(new { Message = e.Message });
+                await _orderService.DeleteOrderAsync(id); 
+                var successResponse = new SuccessResponse<OrderResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Order Deleted Successfully"
+                };
+                return Ok(successResponse);
+
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Delete Order"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Delete Order"
+                };
+                return BadRequest(errorResponse);
             }
         }
 
@@ -61,27 +111,36 @@ namespace Project.PresentationLayer.Controllers
             try
             {
                 var orders = await _orderService.GetAllOrdersAsync(pageNumber, customerId);
-                return Ok(orders);
+                var orderRes = _mapper.Map<IEnumerable<OrderResVM>>(orders);
+                var successResponse = new SuccessResponse<IEnumerable<OrderResVM>>
+                {
+                    StatusCode = 200,
+                    Message = "Orders Retrieved Successfully",
+                    Data = orderRes
+                };
+                return Ok(successResponse);
             }
-            catch (NotFoundException e)
+            catch (DbUpdateException ex)
             {
-                return NotFound(new {Message = e.Message });
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Orders"
+                };
+                return BadRequest(errorResponse);
             }
-        }
-
-
-        [HttpDelete("deleteorder/{id}/{customerId}")]
-        public async Task<IActionResult> DeleteOrder(Guid id, Guid customerId)
-        {
-            try
+            catch (SqlException ex)
             {
-                await _orderService.DeleteOrderAsync(id, customerId);
-                return Ok("Order deleted successfully");
+                _logger.LogError(ex, "SQL exception caught in controller");
 
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(new { Message = e.Message });
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Orders"
+                };
+                return BadRequest(errorResponse);
             }
         }
     }
