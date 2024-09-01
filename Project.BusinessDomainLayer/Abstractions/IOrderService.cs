@@ -1,5 +1,4 @@
 ﻿using Project.BusinessDomainLayer.DTOs;
-using Project.BusinessDomainLayer.VMs;
 
 namespace Project.BusinessDomainLayer.Abstractions
 {
@@ -7,7 +6,7 @@ namespace Project.BusinessDomainLayer.Abstractions
     {
         public Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId);
         public Task<OrderDTO> GetOrderByIdAsync(Guid id);
-        public Task CreateOrderAsync(NewOrderDTO newOrderDto, Guid customerId);
+        public Task CreateOrderAsync(NewOrderDTO newOrderDto);
         public Task DeleteOrderAsync(Guid id, Guid customerId);
     }
 }

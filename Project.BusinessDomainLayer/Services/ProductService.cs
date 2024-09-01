@@ -9,6 +9,8 @@ using Project.BusinessDomainLayer.VMs;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
+using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -29,35 +31,18 @@ namespace Project.BusinessDomainLayer.Services
             _customerRepository = customerRepository;
         }
 
-        public async Task<ProductDTO> GetProductByIdAsync(Guid id, Guid customerId)
-        {
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            var product = await _productRepository.GetByIdAsync(id);
-            if (product.IsDeleted == true && isAdmin != true) {
-                product = null;
-            }
-            return product == null ? throw new NotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
-        }
 
-        public async Task CreateProductAsync(NewProductDTO newProduct, Guid customerId)
+        public async Task <ProductDTO> CreateProductAsync(NewProductDTO newProduct)
         {
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            if (!isAdmin) {
-                throw new AccessViolationException("UnAuthorized");
-            }
-
-            var existingProduct = await _productRepository.GetByNameAsync(newProduct.Name);
-            if (existingProduct != null)
+            var existingProduct = await _productRepository.IsProductExistsAsync(newProduct.Name);
+            if (existingProduct)
             {
-                throw new ArgumentException("Product name used");
+                throw new ProductNameUsedException("Product name used");
             }
             var product = _mapper.Map<Product>(newProduct);
-            if (product.StockQuantity == 0) {
-                product.Status = "OutOfStock";
-            }
-            product.Status = "InStock";
             await _productRepository.AddAsync(product);
             await _unitOfWork.CompleteAsync();
+            return _mapper.Map<ProductDTO>(product);
         }
 
         public async Task<ProductDTO> GetProductByNameAsync(string name) {
@@ -66,75 +51,31 @@ namespace Project.BusinessDomainLayer.Services
         }
 
 
-        public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, Guid customerId)
+        public async Task<ProductDTO> UpdateProductAsync(UpdateProductDTO updatedProduct, Guid productId)
         {
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            int pageCount = 25;
-            if (pageNumber <= 0) {
-                throw new ArgumentException("Page number is invalid");
-            }
-            IEnumerable<Product> products;
-            if (isAdmin)
-            {
-                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageCount) ?? throw new NotFoundException("No Products Found");
-            }
-            else
-            {
-                products = await _productRepository.GetAllPagedAsync(pageNumber, pageCount) ?? throw new NotFoundException("No Products Found");
-            }
-            return _mapper.Map<IEnumerable<ProductDTO>>(products);
-        }
-
-        public async Task UpdateProductAsync(UpdateProductDTO updatedProduct, Guid customerId, Guid productId)
-        {
-
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            if (!isAdmin)
-            {
-                throw new AccessViolationException("Unauthorized");
-            }
-
             var existingProduct = await _productRepository.GetByIdAsync(productId)
-                                  ?? throw new KeyNotFoundException("Product not found");
+                                  ?? throw new ProductNotFoundException("Product not found");
 
-            if (updatedProduct.Name != null && updatedProduct.Name != existingProduct.Name)
+            if (updatedProduct.Name != existingProduct.Name)
             {
-                var oldProduct = await _productRepository.GetByNameAsync(updatedProduct.Name);
-                if (oldProduct != null)
+                var oldProduct = await _productRepository.IsProductExistsAsync(updatedProduct.Name);
+                if (oldProduct)
                 {
-                    throw new InvalidOperationException($"The product name '{updatedProduct.Name}' is already used");
-                }
-            }
-
-            string newStatus = existingProduct.Status;
-            if (updatedProduct.StockQuantity != existingProduct.StockQuantity)
-            {
-                if (updatedProduct.StockQuantity > 0)
-                {
-                    newStatus = "InStock";
-                }
-                else
-                {
-                    newStatus = "OutOfStock";
+                    throw new ProductNameUsedException($"The product name '{updatedProduct.Name}' is already used");
                 }
             }
 
             var resultProduct = _mapper.Map(updatedProduct, existingProduct);
-            resultProduct.Status = newStatus;
 
             _productRepository.Update(resultProduct);
             await _unitOfWork.CompleteAsync();
+            return _mapper.Map<ProductDTO>(resultProduct);
         }
 
 
-        public async Task DeleteProductAsync(Guid id,Guid customerId)
+        public async Task DeleteProductAsync(Guid id)
         {
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            if (!isAdmin)
-            {
-                throw new AccessViolationException("UnAuthorized");
-            }
-            var product = await _productRepository.IsProductExistsAsync(id);
+            var product = await _productRepository.IsProductExistsByIdAsync(id);
             if (product)
             {
                 await _productRepository.RemoveByIdAsync(id);
@@ -142,8 +83,41 @@ namespace Project.BusinessDomainLayer.Services
             }
             else
             { 
-             throw new KeyNotFoundException("Product not found");
+             throw new InvalidProductIdException("InValid Product Id");
             }
+        }
+
+
+        public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, Guid customerId)
+        {
+            bool exists = await _customerRepository.IsCustomerExistsByIdAsync(customerId);
+            if (!exists)
+            {
+                throw new InvalidCustomerIdException("InValid Customer Id");
+            }
+            bool isAdmin = await _customerRepository.IsAdmin(customerId);
+            int pageCount = 25;
+            if (pageNumber <= 0)
+            {
+                pageNumber = 1;
+            }
+            IEnumerable<Product> products;
+            if (isAdmin)
+            {
+                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageCount) ?? throw new ProductNotFoundException("No Products Found");
+            }
+            else
+            {
+                products = await _productRepository.GetAllPagedAsync(pageNumber, pageCount) ?? throw new ProductNotFoundException("No Products Found");
+            }
+            return _mapper.Map<IEnumerable<ProductDTO>>(products);
+        }
+
+
+        public async Task<ProductDTO> GetProductByIdAsync(Guid id)
+        {
+            var product = await _productRepository.GetByIdAsync(id);
+            return product == null ? throw new ProductNotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
         }
 
 

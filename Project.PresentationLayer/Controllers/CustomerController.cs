@@ -1,11 +1,14 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.Abstractions;
-using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
 using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
 using Project.BusinessDomainLayer.DTOs;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using Project.BusinessDomainLayer.Responses;
+using Project.RuntimeLayer;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -28,71 +31,66 @@ namespace Project.PresentationLayer.Controllers
             _logger = logger;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> LogIn([FromBody][Required] LoginVM login)
-        {
-            try {
-                var logInDTO = _mapper.Map<LogInDTO>(login);
-                var customer = await _customerService.AuthenticateAsync(logInDTO);
-                return Ok(_mapper.Map<CustomerVM>(customer));
-            }
-            catch (ArgumentNullException e)
-            {
-                _logger.LogWarning("Email is not registered {email}", login.Email);
-                return NotFound(new { Message = e.Message });
-            }
-            catch (InvalidOperationException e) {
-                _logger.LogWarning(e.Message);
-                return BadRequest(new { Message = e.Message });
-            }
-        }
-
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] NewCustomerVM newCustomer)
+        public async Task<IActionResult> Register([FromBody][Required] CustomerVM customerVM)
         {
-
             try
             {
-                var newCustomerDTO = _mapper.Map<NewCustomerDTO>(newCustomer);
+                var newCustomerDTO = _mapper.Map<NewCustomerDTO>(customerVM);
                 var customer = await _customerService.CreateCustomerAsync(newCustomerDTO);
-                return Ok(_mapper.Map<CustomerVM>(customer));
+                var customerResponse = _mapper.Map<CustomerResVM>(customer);
+                var successResponse = new SuccessResponse<CustomerResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Customer Added Successfully",
+                    Data = customerResponse
+                };
+                return Ok(successResponse);
             }
-            catch (InvalidOperationException e)
+            catch (DbUpdateException ex)
             {
-                _logger.LogWarning(e.Message);
-                return BadRequest(new { Message = e.Message });
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Customer"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Customer"
+                };
+                return BadRequest(errorResponse);
             }
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> LogIn([FromBody][Required] LoginVM loginVM)
+        {
+            var loginDTO = _mapper.Map<LoginDTO>(loginVM);
+            var customer = await _customerService.AuthenticateAsync(loginDTO);
+            var customerResponse = _mapper.Map<CustomerResVM>(customer);
+            var successResponse = new SuccessResponse<CustomerResVM>
+            {
+                StatusCode = 200,
+                Message = "Login Successfully",
+                Data = customerResponse
+            };
+            return Ok(successResponse);
+        }
     }
 }
 
 
 
-//_logger.LogInformation("SignUp process started for user: {Email}", newCustomerDto.Email);
 //var stopwatch = new Stopwatch();
-
 //stopwatch.Start();
-//_logger.LogInformation("Checking if user already exists");
 //stopwatch.Stop();
-//_logger.LogInformation("Time taken to check existing user: {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
-
-//[HttpPost("signup")]
-//public async Task<IActionResult> SignUp([FromBody] NewCustomerDTO newCustomerDto)
-//{
-//    var existingCustomer = await _customerService.GetCustomerByEmailAsync(newCustomerDto.Name);
-//    if (existingCustomer != null)
-//    {
-//        return Conflict("Email already exists");
-//    }
-
-//    var passwordSalt = _encryption.GenerateSaltedPassword();
-//    var passwordHash = _encryption.GenerateEncryptedPassword(passwordSalt, newCustomerDto.Password);
-//    var customerDto = _mapper.Map<CustomerDTO>(newCustomerDto);
-//    customerDto.PasswordSalt = passwordSalt;
-//    customerDto.PasswordHash = passwordHash;
-
-//    await _customerService.CreateCustomerAsync(customerDto);
-
-//    return StatusCode(201);
-//}
+//_logger.LogInformation("Time taken to {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);

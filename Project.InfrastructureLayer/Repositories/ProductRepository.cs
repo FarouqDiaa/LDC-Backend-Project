@@ -36,7 +36,8 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        Size = 1
                     };
 
                     _cache.Set(cacheKey, product, cacheOptions);
@@ -46,6 +47,26 @@ namespace Project.InfrastructureLayer.Repositories
             return product;
         }
 
+        public async Task<bool> IsProductExistsAsync(string name)
+        {
+            var cacheKey = $"ProductExists-{name}";
+            if (!_cache.TryGetValue(cacheKey, out bool exists))
+            {
+                exists = await _context.Products
+                                       .AsNoTracking()
+                                       .AnyAsync(p => p.Name == name);
+
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
+                };
+                _cache.Set(cacheKey, exists, cacheOptions);
+
+            }
+
+            return exists;
+        }
         public async Task<IEnumerable<Product>> GetAllAsync()
         {
             return await _context.Products.ToListAsync();
@@ -67,7 +88,8 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        Size = 1
                     };
 
                     _cache.Set(cacheKey, products, cacheOptions);
@@ -102,7 +124,7 @@ namespace Project.InfrastructureLayer.Repositories
 
 
 
-        public async Task<bool> IsProductExistsAsync(Guid id)
+        public async Task<bool> IsProductExistsByIdAsync(Guid id)
         {
             var cacheKey = $"ProductExists-{id}";
             if (!_cache.TryGetValue(cacheKey, out bool exists))
@@ -113,7 +135,8 @@ namespace Project.InfrastructureLayer.Repositories
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
 
@@ -136,7 +159,8 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        Size = 1
                     };
 
                     _cache.Set(cacheKey, products, cacheOptions);

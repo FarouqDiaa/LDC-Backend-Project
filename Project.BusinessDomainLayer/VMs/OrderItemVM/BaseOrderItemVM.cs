@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace Project.BusinessDomainLayer.VMs
 {
-    public class NewOrderItemVM
+    public class BaseOrderItemVM
     {
         [Required(ErrorMessage = "Added Product Id is required")]
         public Guid ProductId { get; set; }

@@ -2,10 +2,9 @@
 using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Project.BusinessDomainLayer.Services;
 using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
+using Project.BusinessDomainLayer.Responses;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -24,6 +23,38 @@ namespace Project.PresentationLayer.Controllers
             _mapper = mapper;
         }
 
+
+        [HttpPost("addorder")]
+        public async Task<IActionResult> AddOrder(OrderVM newOrder)
+        {
+            try
+            {
+                var newOrderDTO = _mapper.Map<NewOrderDTO>(newOrder);
+                var order = await _orderService.CreateOrderAsync(newOrderDTO);
+
+                var orderRes = _mapper.Map<OrderResVM>(order);
+                var successResponse = new SuccessResponse<OrderResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Order Added Successfully",
+                    Data = orderRes
+                };
+                return Ok(successResponse);
+            }
+            catch (InvalidOperationException e)
+            {
+                return Conflict(new { Message = e.Message });
+            }
+            catch (KeyNotFoundException e)
+            {
+                return NotFound(new { Message = e.Message });
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(new { Message = e.Message });
+            }
+        }
+
         [HttpGet("getallorders/{customerId}")]
         public async Task<IActionResult> GetAllOrders(Guid customerId, [FromQuery] int pageNumber = 1)
         {
@@ -38,27 +69,6 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        [HttpPost("addorder/{customerId}")]
-        public async Task<IActionResult> AddOrder(Guid customerId, NewOrderVM newOrder)
-        {
-            try
-            {
-                var newOrderDTO = _mapper.Map<NewOrderDTO>(newOrder);
-                await _orderService.CreateOrderAsync(newOrderDTO, customerId);
-                return Ok("Order added successfully");
-            }
-            catch (InvalidOperationException e)
-            {
-                return Conflict(new { Message = e.Message });
-            }
-            catch (KeyNotFoundException e) {
-                return NotFound(new { Message = e.Message });
-            }
-            catch(NotFoundException e)
-            {
-                return NotFound(new { Message = e.Message });
-            }
-        }
 
         [HttpDelete("deleteorder/{id}/{customerId}")]
         public async Task<IActionResult> DeleteOrder(Guid id, Guid customerId)

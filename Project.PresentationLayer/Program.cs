@@ -2,6 +2,7 @@ using Project.RuntimeLayer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Project.PresentationLayer.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

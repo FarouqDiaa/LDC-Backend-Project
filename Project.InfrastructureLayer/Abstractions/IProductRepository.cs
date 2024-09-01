@@ -13,7 +13,8 @@ namespace Project.InfrastructureLayer.Abstractions
         public Task RemoveByIdAsync(Guid id);
         public void Update(Product product);
 
-        public Task<bool> IsProductExistsAsync(Guid id);
+        public Task<bool> IsProductExistsByIdAsync(Guid id);
+        public Task<bool> IsProductExistsAsync(string name);
 
     }
 }

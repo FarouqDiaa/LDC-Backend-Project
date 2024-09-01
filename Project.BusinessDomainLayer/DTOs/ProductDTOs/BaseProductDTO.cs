@@ -1,11 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
-namespace Project.BusinessDomainLayer.VMs
+namespace Project.BusinessDomainLayer.DTOs
 {
-    public class NewProductVM
+    public class BaseProductDTO
     {
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(100, ErrorMessage = "Name shouldn't be over 100 characters")]
+        [StringLength(100, MinimumLength = 4, ErrorMessage = "Name must be at least 4 characters and no more than 100 characters")]
         public string Name { get; set; }
 
         [StringLength(500, ErrorMessage = "Description shouldn't be over 500 characters")]
@@ -18,10 +19,13 @@ namespace Project.BusinessDomainLayer.VMs
         [Required(ErrorMessage = "Amount is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be a positive value")]
         public double Cost { get; set; }
+        
+        [Required(ErrorMessage = "Status is required")]
+        [RegularExpression("InStock|OutOfStock", ErrorMessage = "Status must be either 'InStock' or 'OutOfStock'")]
+        public string Status { get; set; } = "InActive";
 
         [Required(ErrorMessage = "StockQuantity is required")]
         [Range(0, int.MaxValue, ErrorMessage = "StockQuantity must be a positive value")]
         public int StockQuantity { get; set; }
-
     }
 }

@@ -10,10 +10,13 @@ namespace Project.RuntimeLayer.Mappings
         public ProductMappingProfile()
         {
             CreateMap<Product, ProductDTO>().ReverseMap();
-            CreateMap<NewProductVM, Product>();
-            CreateMap<EditProductVM, Product>();
-            CreateMap<EditProductVM, UpdateProductDTO>();
-            CreateMap<NewProductVM, NewProductDTO>();
+            CreateMap<ProductVM, Product>();
+            CreateMap<IEnumerable<ProductDTO>, IEnumerable<ProductResVM>>();
+            CreateMap<IEnumerable<Product>, IEnumerable<ProductDTO>>();
+            CreateMap<ProductVM, NewProductDTO>()
+                .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Amount));
+            CreateMap<ProductDTO, ProductResVM>()
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Cost));
         }
     }
 }

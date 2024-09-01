@@ -9,7 +9,7 @@ namespace Project.InfrastructureLayer.Abstractions
         public Task<Customer> GetByEmailAsync(string email);
 
         public Task<bool> IsCustomerExistsAsync(string email);
-        public Task<bool> IsCustomerExistsWithIdAsync(Guid id);
+        public Task<bool> IsCustomerExistsByIdAsync(Guid id);
 
         public Task<bool> IsAdmin(Guid id);
     }

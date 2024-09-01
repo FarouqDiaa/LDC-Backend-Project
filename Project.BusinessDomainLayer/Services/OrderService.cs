@@ -6,6 +6,8 @@ using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.VMs;
 using OpenQA.Selenium;
 using Project.InfrastructureLayer.Repositories;
+using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
+using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -34,7 +36,7 @@ namespace Project.BusinessDomainLayer.Services
 
             var orderItems = await _orderItemRepository.GetByIdAsync(id);
 
-            var orderItemDTOs = _mapper.Map<ICollection<OrderItemDTO>>(orderItems);
+            var orderItemDTOs = _mapper.Map<ICollection<NewOrderItemDTO>>(orderItems);
 
             var orderDTO = _mapper.Map<OrderDTO>(order);
             orderDTO.OrderItems = orderItemDTOs;
@@ -42,12 +44,13 @@ namespace Project.BusinessDomainLayer.Services
             return orderDTO;
         }
 
-        public async Task CreateOrderAsync(NewOrderDTO newOrder, Guid customerId)
+        public async Task CreateOrderAsync(NewOrderDTO newOrder)
         {
-            bool exists = await _customerRepository.IsCustomerExistsWithIdAsync(customerId);
+
+            bool exists = await _customerRepository.IsCustomerExistsByIdAsync(newOrder.CustomerId);
             if (!exists)
             {
-                throw new KeyNotFoundException("Customer not found");
+                throw new FailedCustomerActionException("Customer doesn't exist");
             }
 
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
@@ -56,29 +59,21 @@ namespace Project.BusinessDomainLayer.Services
                 {
                     var order = _mapper.Map<Order>(newOrder);
                     order.OrderItems = null;
-                    order.CustomerId = customerId;
-                    order.Amount = 0;
-
                     await _orderRepository.AddAsync(order);
                     await _unitOfWork.CompleteAsync();
 
                     foreach (var item in newOrder.OrderItems)
                     {
-                        var product = await _productRepository.GetByIdAsync(item.ProductId);
-
-                        if (product == null)
-                        {
-                            throw new NotFoundException("One of the products is not found");
-                        }
+                        var product = await _productRepository.GetByIdAsync(item.ProductId) ?? throw new ProductNotFoundException("One of the products is not found");
 
                         if (product.IsDeleted)
                         {
-                            throw new NotFoundException($"{product.Name} is deleted");
+                            throw new ProductNotFoundException($"{product.Name} is deleted");
                         }
 
                         if (product.StockQuantity < item.Quantity)
                         {
-                            throw new InvalidOperationException($"{product.Name} doesn't have enough quantities");
+                            throw new ProductQuantityException($"{product.Name} doesn't have enough quantities");
                         }
 
                         product.StockQuantity -= item.Quantity;
@@ -96,7 +91,7 @@ namespace Project.BusinessDomainLayer.Services
                         order.Amount += orderItem.Cost;
                     }
 
-                    order.TotalAmount = order.Amount + order.Tax;
+                    order.TotalAmount = order.Amount + order.Tax * order.Amount;
 
                     await _unitOfWork.CompleteAsync();
                     await transaction.CommitAsync();

@@ -1,16 +1,17 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Project.BusinessDomainLayer.Services;
 using Project.BusinessDomainLayer.Abstractions;
 using Project.InfrastructureLayer.Abstractions;
 using Project.InfrastructureLayer.Repositories;
-using Project.InfrastructureLayer;
 using Project.RuntimeLayer.Mappings;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using Project.BusinessDomainLayer.Responses;
+
 
 namespace Project.RuntimeLayer
 {
@@ -19,9 +20,27 @@ namespace Project.RuntimeLayer
         public static void ConfigureApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddAutoMapper(typeof(CustomerMappingProfile));
-            services.AddMemoryCache(); 
+            services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 100;
+            }); 
             services.AddControllers().AddNewtonsoftJson();
 
+            services.AddControllers()
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errors = context.ModelState.GetValidationErrors();
+                    var errorResponse = new ErrorResponse
+                    {
+                        StatusCode = 400,
+                        Message = "Invalid Data",
+                        Errors = errors
+                    };
+                    return new BadRequestObjectResult(errorResponse);
+                };
+            });
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ICustomerService, CustomerService>();

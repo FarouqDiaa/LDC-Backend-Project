@@ -42,7 +42,8 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        Size = 1
                     };
 
                     _cache.Set(cacheKey, customer, cacheOptions);
@@ -64,7 +65,8 @@ namespace Project.InfrastructureLayer.Repositories
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
 
@@ -72,7 +74,7 @@ namespace Project.InfrastructureLayer.Repositories
 
             return exists;
         }
-        public async Task<bool> IsCustomerExistsWithIdAsync(Guid customerId)
+        public async Task<bool> IsCustomerExistsByIdAsync(Guid customerId)
         {
             var cacheKey = $"CustomerExists-{customerId}";
             if (!_cache.TryGetValue(cacheKey, out bool exists))
@@ -83,7 +85,8 @@ namespace Project.InfrastructureLayer.Repositories
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
 
@@ -106,7 +109,8 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        Size = 1
                     };
 
                     _cache.Set(cacheKey, isAdmin, cacheOptions);

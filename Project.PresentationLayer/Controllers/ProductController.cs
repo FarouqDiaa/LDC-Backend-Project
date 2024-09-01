@@ -3,11 +3,12 @@ using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.JsonPatch;
-using OpenQA.Selenium;
 using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.DotNet.Scaffolding.Shared.Messaging;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using ErrorResponse = Project.BusinessDomainLayer.Responses.ErrorResponse;
+using Project.BusinessDomainLayer.Responses;
 
 namespace Project.PresentationLayer.Controllers
 {
@@ -16,134 +17,219 @@ namespace Project.PresentationLayer.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly JwtService _jwtService;
+        //private readonly IJwtService _jwtService;
         private readonly ILogger<ProductController> _logger;
         private readonly IMapper _mapper;
 
         public ProductController(IProductService productService, JwtService jwtService, ILogger<ProductController> logger, IMapper mapper)
         {
             _productService = productService;
-            _jwtService = jwtService;
+            //_jwtService = jwtService;
             _logger = logger;
             _mapper = mapper;
         }
 
-        [HttpGet("getallproducts/{id}")]
-        public async Task<IActionResult> GetAllProducts(Guid id, [FromQuery] int pageNumber = 1)
+        [HttpPost("addproduct")]
+        public async Task<IActionResult> AddProduct([FromBody][Required] ProductVM productVM)
         {
             try
             {
-                var products = await _productService.GetAllProductsAsync(pageNumber, id);
-                return Ok(products);
+                var newProductDTO = _mapper.Map<NewProductDTO>(productVM);
+                var productDTO = await _productService.CreateProductAsync(newProductDTO);
+                var newProductVM = _mapper.Map<ProductResVM>(productDTO);
+                var successResponse = new SuccessResponse<ProductResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Product Added Successfully",
+                    Data = newProductVM
+                };
+                return Ok(successResponse);
             }
-            catch (NotFoundException e)
+            catch (DbUpdateException ex)
             {
-                _logger.LogWarning(e.Message);
-                return NotFound(new { Message = e.Message });
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Product"
+                };
+                return BadRequest(errorResponse);
             }
-            catch (ArgumentException e) {
-                _logger.LogError(e.Message);
-                return BadRequest(new { Message = e.Message });
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Add Product"
+                };
+                return BadRequest(errorResponse);
             }
         }
 
-        [HttpGet("getproduct/{id}/{customerId}")]
+
+        [HttpPut("updateproduct/{id}")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody][Required] ProductVM productVM)
+        {
+            try
+            {
+                var updateProductDTO = _mapper.Map<UpdateProductDTO>(productVM);
+                var productDTO = await _productService.UpdateProductAsync(updateProductDTO, id);
+                var newProductVM = _mapper.Map<ProductResVM>(productDTO);
+                var successResponse = new SuccessResponse<ProductResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Product Added Successfully",
+                    Data = newProductVM
+                };
+                return Ok(successResponse);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Update Product"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Update Product"
+                };
+                return BadRequest(errorResponse);
+            }
+        }
+
+
+
+        [HttpDelete("deleteproduct/{id}")]
+        public async Task<IActionResult> DeleteProduct(Guid id)
+        {
+            try
+            {
+                await _productService.DeleteProductAsync(id);
+                var successResponse = new SuccessResponse<ProductResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Product Deleted Successfully"
+                };
+                return Ok(successResponse);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Delete Product"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Delete Product"
+                };
+                return BadRequest(errorResponse);
+            }
+        }
+
+        [HttpGet("getallproducts/{customerId}")]
+        public async Task<IActionResult> GetAllProducts(Guid customerId, [FromQuery] int pageNumber = 1)
+        {
+            try
+            {
+                var products = await _productService.GetAllProductsAsync(pageNumber, customerId);
+                var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
+                var successResponse = new SuccessResponse<IEnumerable<ProductResVM>>
+                {
+                    StatusCode = 200,
+                    Message = "Products Retrieved Successfully",
+                    Data = productsRes
+                };
+                return Ok(successResponse);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Products"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Products"
+                };
+                return BadRequest(errorResponse);
+            }
+        }
+
+        [HttpGet("getproductbyid/{id}")]
         public async Task<IActionResult> GetProductById(Guid id, Guid customerId)
         {
             try
             {
-                var product = await _productService.GetProductByIdAsync(id, customerId);
-                return Ok(product);
+                var product = await _productService.GetProductByIdAsync(id);
+                var newProductVM = _mapper.Map<ProductResVM>(product);
+                var successResponse = new SuccessResponse<ProductResVM>
+                {
+                    StatusCode = 200,
+                    Message = "Product Retrieved Successfully",
+                    Data = newProductVM
+                };
+                return Ok(successResponse);
             }
-            catch (NotFoundException e)
+            catch (DbUpdateException ex)
             {
-                _logger.LogWarning(e.Message);
-                return NotFound(new { Message = e.Message });
+                _logger.LogError(ex, "Database update exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Product"
+                };
+                return BadRequest(errorResponse);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Product"
+                };
+                return BadRequest(errorResponse);
             }
         }
 
-        [HttpPost("addproduct/{id}")]
-        public async Task<IActionResult> AddProduct(Guid id,[FromBody][Required] NewProductVM newProduct)
-        {
-            try
-            {
-                var newProductDTO = _mapper.Map<NewProductDTO>(newProduct);
-                await _productService.CreateProductAsync(newProductDTO, id);
-                return Ok(new { Message = "Product Added Successfully" });
-            }
-            catch (AccessViolationException e)
-            {
-                _logger.LogWarning(e.Message);
-                return Unauthorized(new { Message = e.Message });
-            }
-            catch (ArgumentException e)
-            {
-                _logger.LogWarning(e.Message);
-                return BadRequest(new { Message = e.Message });
-            }
-        }
-
-
-        [HttpPut("updateproduct/{id}/{customerId}")]
-        public async Task<IActionResult> UpdateProduct(Guid id, Guid customerId, [FromBody][Required] EditProductVM updatedProduct)
-        {
-            try
-            {
-                var updateProductDTO = _mapper.Map<UpdateProductDTO>(updatedProduct);
-                await _productService.UpdateProductAsync(updateProductDTO, customerId, id);
-                return Ok(new { Message = "Updated Successfully" });
-            }
-            catch (AccessViolationException e)
-            {
-                _logger.LogWarning(e.Message);
-                return Unauthorized(new { Message = e.Message });
-            }
-            catch (KeyNotFoundException e)
-            {
-                _logger.LogWarning(e.Message);
-                return NotFound(new { Message = e.Message });
-            }
-            catch (InvalidOperationException e)
-            {
-                _logger.LogWarning(e.Message);
-                return BadRequest(new { Message = e.Message });
-            }
-        }
-
-
-        [HttpDelete("deleteproduct/{id}/{customerId}")]
-        public async Task<IActionResult> DeleteProduct(Guid id, Guid customerId)
-        {
-            try
-            {
-                await _productService.DeleteProductAsync(id, customerId);
-                return Ok("Product Deleted Successfully");
-            }
-            catch (AccessViolationException e)
-            {
-                _logger.LogWarning(e.Message);
-                return Unauthorized(new { Message = e.Message });
-            }
-            catch (KeyNotFoundException e)
-            {
-                _logger.LogWarning(e.Message);
-                return NotFound(new { Message = e.Message });
-            }
-        }
 
     }
 }
-
-
-
-//    var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
-//    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
-//    {
-//    }
-//    else
-//    {
-//        return Forbid("You do not have permission to add products");
-//    }
 
 
 //[HttpPatch("updateproduct/{id}")]
@@ -159,12 +245,6 @@ namespace Project.PresentationLayer.Controllers
 
 //    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
 //    {
-//        var existingProduct = await _productService.GetProductByIdAsync(id);
-//        if (existingProduct == null)
-//        {
-//            return NotFound("Product not found");
-//        }
-
 //        var productToPatch = _mapper.Map<ProductDTO>(existingProduct);
 //        patchDoc.ApplyTo(productToPatch);
 
@@ -172,16 +252,4 @@ namespace Project.PresentationLayer.Controllers
 //        {
 //            return ValidationProblem(ModelState);
 //        }
-
-//        _mapper.Map(productToPatch, existingProduct);
-//        existingProduct.UpdatedOn = DateTime.UtcNow;
-
-//        await _productService.UpdateProductAsync(existingProduct);
-
-//        return Ok("Product updated successfully");
 //    }
-//    else
-//    {
-//        return Forbid("You do not have permission to update products");
-//    }
-//}

@@ -10,9 +10,13 @@ namespace Project.RuntimeLayer.Mappings
         public CustomerMappingProfile()
         {
             CreateMap<Customer, CustomerDTO>().ReverseMap();
-            CreateMap<NewCustomerVM, Customer>();
-            CreateMap<NewCustomerVM, NewCustomerDTO>();
-            CreateMap<NewCustomerVM, CustomerDTO>();
+            CreateMap<CustomerVM, Customer>();
+            CreateMap<CustomerVM, NewCustomerDTO>();
+            CreateMap<CustomerVM, CustomerDTO>();
+            CreateMap<Customer, CustomerResVM>();
+            CreateMap<NewCustomerDTO, Customer>();
+            CreateMap<CustomerDTO, CustomerResVM>();
+            CreateMap<LogInVM, LogInDTO>();
         }
     }
 }
