@@ -81,7 +81,7 @@ namespace Project.PresentationLayer.Controllers
                 var successResponse = new SuccessResponse<ProductResVM>
                 {
                     StatusCode = 200,
-                    Message = "Product Added Successfully",
+                    Message = "Product Updated Successfully",
                     Data = newProductVM
                 };
                 return Ok(successResponse);

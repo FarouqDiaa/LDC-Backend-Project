@@ -45,6 +45,7 @@ namespace Project.BusinessDomainLayer.Services
                 {
                     var order = _mapper.Map<Order>(newOrder);
                     order.OrderItems = new List<OrderItem>();
+                    order.CustomerId = newOrder.CustomerId;
                     await _orderRepository.AddAsync(order);
                     await _unitOfWork.CompleteAsync();
 
@@ -64,20 +65,17 @@ namespace Project.BusinessDomainLayer.Services
 
                         product.StockQuantity -= item.Quantity;
 
-                        var orderItem = new OrderItem
-                        {
-                            OrderId = order.Id,
-                            ProductId = item.ProductId,
-                            Quantity = item.Quantity,
-                            Cost = product.Cost * item.Quantity
-                        };
+
+                        var orderItem = _mapper.Map<OrderItem>(item);
+                        orderItem.OrderId = order.Id;
+                        orderItem.Cost = product.Cost * item.Quantity;
 
                         await _orderItemRepository.AddAsync(orderItem);
                         order.OrderItems.Add(orderItem);
                         order.Amount += orderItem.Cost;
                     }
 
-                    order.TotalAmount = order.Amount + (order.Tax * order.Amount);
+                    order.TotalAmount = Math.Round(order.Amount + (order.Tax * order.Amount), 2); ;
 
                     await _unitOfWork.CompleteAsync();
                     await transaction.CommitAsync();

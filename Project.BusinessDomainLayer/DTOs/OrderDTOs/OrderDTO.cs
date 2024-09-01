@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Project.BusinessDomainLayer.DTOs
 {
-    public class OrderDTO
+    public class OrderDTO : BaseOrderDTO
     {
         public Guid Id { get; set; }
         public bool IsDeleted { get; set; }
