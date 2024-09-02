@@ -3,9 +3,6 @@ using Project.BusinessDomainLayer.Abstractions;
 using Project.InfrastructureLayer.Abstractions;
 using Project.InfrastructureLayer.Entities;
 using AutoMapper;
-using Project.BusinessDomainLayer.VMs;
-using OpenQA.Selenium;
-using Project.InfrastructureLayer.Migrations;
 using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
 
 namespace Project.BusinessDomainLayer.Services
@@ -32,6 +29,7 @@ namespace Project.BusinessDomainLayer.Services
             {
                 throw new UsedEmailException("Email already used");
             }
+
             var customer = GeneratePassword(_mapper.Map<Customer>(newCustomer), newCustomer.Password);
             await _customerRepository.AddAsync(customer);
             await _unitOfWork.CompleteAsync();
@@ -59,31 +57,29 @@ namespace Project.BusinessDomainLayer.Services
 
 
 
-        public async Task<CustomerDTO> AuthenticateAsync(LoginDTO logInDTO)
+        public async Task<CustomerDTO> AuthenticateAsync(LoginDTO loginDTO)
         {
-            string email = logInDTO.Email, password = logInDTO.Password;
+            string email = loginDTO.Email, password = loginDTO.Password;
 
             Customer customer = await _customerRepository.GetByEmailAsync(email) ?? throw new EmailNotRegisteredException("Email not registered");
             bool isValidPassword = _encryption.ValidateEncryptedData(password, customer.PasswordHash, customer.PasswordSalt);
 
             if (!isValidPassword)throw new AuthenticationException("Email or password is incorrect");
 
-            var customerDto = _mapper.Map<CustomerDTO>(customer);
-            return customerDto;
+           return _mapper.Map<CustomerDTO>(customer);
         }
 
         public async Task<CustomerDTO> GetCustomerByEmailAsync(string email)
         {
             var customer = await _customerRepository.GetByEmailAsync(email);
             if (customer == null) throw new CustomerNotFoundException("Customer not found");
-            var customerDto = _mapper.Map<CustomerDTO>(customer);
-            return customerDto;
+            return _mapper.Map<CustomerDTO>(customer);
         }
 
         public async Task<bool> IsTheUserAdmin(Guid id)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
-            if (customer == null) throw new CustomerNotFoundException("Customer not found");
+            var customer = await _customerRepository.IsCustomerExistsByIdAsync(id);
+            if (customer == false) throw new CustomerNotFoundException("Customer not found");
 
             return await _customerRepository.IsAdmin(id);
 

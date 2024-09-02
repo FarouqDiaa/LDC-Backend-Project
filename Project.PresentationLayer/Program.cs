@@ -1,7 +1,5 @@
 using Project.RuntimeLayer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Project.PresentationLayer.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);

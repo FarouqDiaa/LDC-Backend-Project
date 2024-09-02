@@ -7,7 +7,6 @@ namespace Project.InfrastructureLayer.Abstractions
         public Task<Product> GetByIdAsync(Guid id);
         public Task<Product> GetByNameAsync(string name);
         public Task AddAsync(Product product);
-        public Task<IEnumerable<Product>> GetAllAsync();
         public Task<IEnumerable<Product>> GetAllPagedAsync(int pageNumber, int pageSize);
         public Task<IEnumerable<Product>> GetAllPagedAsAdminAsync(int pageNumber, int pageSize);
         public Task RemoveByIdAsync(Guid id);

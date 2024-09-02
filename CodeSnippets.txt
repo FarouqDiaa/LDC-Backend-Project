@@ -1,0 +1,64 @@
+
+//var stopwatch = new Stopwatch();
+//stopwatch.Start();
+//stopwatch.Stop();
+//_logger.LogInformation("Time taken to {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
+
+
+//[HttpPatch("updateproduct/{id}")]
+//[Authorize]
+//public async Task<IActionResult> PatchProduct(Guid id, [FromBody] JsonPatchDocument<ProductDTO> patchDoc)
+//{
+//    if (patchDoc == null)
+//    {
+//        return BadRequest("Patch document is null");
+//    }
+
+//    var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
+
+//    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
+//    {
+//        var productToPatch = _mapper.Map<ProductDTO>(existingProduct);
+//        patchDoc.ApplyTo(productToPatch);
+
+//        if (!TryValidateModel(productToPatch))
+//        {
+//            return ValidationProblem(ModelState);
+//        }
+//    }
+
+
+//public async Task CreateOrderAsync(NewOrderVM newOrder, Guid customerId)
+//{
+//    bool exists = await _customerRepository.CustomerExistsWithIdAsync(customerId);
+//    if (!exists)
+//    {
+//        throw new KeyNotFoundException("Customer not found");
+//    }
+//    var order = _mapper.Map<Order>(newOrder);
+
+//    foreach (var item in order.OrderItems)
+//    {
+//        var product = await _productRepository.GetByIdAsync(item.ProductId);
+//        if (product.IsDeleted)
+//        {
+//            throw new NotFoundException("One of the products is not found");
+//        }
+//        if (product == null || product.StockQuantity < item.Quantity)
+//        {
+//            throw new InvalidOperationException($"Product {product?.Name} doesn't have enough quantities");
+//        }
+
+//        product.StockQuantity -= item.Quantity;
+//        item.Cost = product.Cost * item.Quantity;
+//        item.OrderId = order.OrderId;
+//        order.Amount += item.Cost;
+
+//        await _orderItemRepository.AddAsync(item);
+//    }
+
+//    order.TotalAmount = order.Amount + order.Tax;
+
+//    await _orderRepository.AddAsync(order);
+//    await _unitOfWork.CompleteAsync();
+//}

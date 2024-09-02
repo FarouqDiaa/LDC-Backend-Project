@@ -46,7 +46,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Add Order"
@@ -57,7 +57,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Add Order"
@@ -73,7 +73,7 @@ namespace Project.PresentationLayer.Controllers
             try
             {
                 await _orderService.DeleteOrderAsync(id); 
-                var successResponse = new SuccessResponse<OrderResVM>
+                var successResponse = new BaseResponse
                 {
                     StatusCode = 200,
                     Message = "Order Deleted Successfully"
@@ -85,7 +85,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Delete Order"
@@ -96,7 +96,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Delete Order"
@@ -124,7 +124,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Orders"
@@ -135,7 +135,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Orders"
@@ -145,12 +145,3 @@ namespace Project.PresentationLayer.Controllers
         }
     }
 }
-
-
-//[HttpPost("addorder")]
-//[Authorize]
-//public async Task<IActionResult> AddOrder(NewOrderDTO newOrder)
-//{
-//    await _orderService.CreateOrderAsync(newOrder);
-//    return Ok("Order added successfully");
-//}

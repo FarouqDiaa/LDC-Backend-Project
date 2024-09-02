@@ -3,9 +3,6 @@ using Project.BusinessDomainLayer.DTOs;
 using Project.InfrastructureLayer.Entities;
 using Project.InfrastructureLayer.Abstractions;
 using Project.BusinessDomainLayer.Abstractions;
-using Project.BusinessDomainLayer.VMs;
-using OpenQA.Selenium;
-using Project.InfrastructureLayer.Repositories;
 using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
 using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
 using Project.BusinessDomainLayer.Exceptions.OrderExceptions;
@@ -21,6 +18,7 @@ namespace Project.BusinessDomainLayer.Services
         private readonly IProductRepository _productRepository;
         private readonly IOrderItemRepository _orderItemRepository;
 
+        private static readonly decimal TaxRate = 0.14m;
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper , IOrderRepository orderReposiotry, ICustomerRepository customerRepository, IProductRepository productRepository, IOrderItemRepository orderItemRepository)
         {
             _unitOfWork = unitOfWork;
@@ -62,21 +60,29 @@ namespace Project.BusinessDomainLayer.Services
                         {
                             throw new ProductQuantityException($"{product.Name} doesn't have enough quantities");
                         }
+                        var existingOrderItem = order.OrderItems.FirstOrDefault(oi => oi.ProductId == item.ProductId);
 
-                        product.StockQuantity -= item.Quantity;
+                        if (existingOrderItem != null)
+                        {
+                            existingOrderItem.Quantity += item.Quantity;
+                            existingOrderItem.Cost += product.Cost * item.Quantity;
+                        }
+                        else
+                        {
+                            product.StockQuantity -= item.Quantity;
 
+                            var orderItem = _mapper.Map<OrderItem>(item);
+                            orderItem.OrderId = order.Id;
+                            orderItem.Cost = product.Cost * item.Quantity;
 
-                        var orderItem = _mapper.Map<OrderItem>(item);
-                        orderItem.OrderId = order.Id;
-                        orderItem.Cost = product.Cost * item.Quantity;
+                            order.OrderItems.Add(orderItem);
+                        }
 
-                        await _orderItemRepository.AddAsync(orderItem);
-                        order.OrderItems.Add(orderItem);
-                        order.Amount += orderItem.Cost;
+                        order.Amount += product.Cost * item.Quantity;
                     }
 
-                    order.TotalAmount = Math.Round(order.Amount + (order.Tax * order.Amount), 2); ;
-
+                    order.TotalAmount = Math.Round(order.Amount + ((float)TaxRate * order.Amount), 2); ;
+                    order.Tax = (float)TaxRate;
                     await _unitOfWork.CompleteAsync();
                     await transaction.CommitAsync();
                     return _mapper.Map<OrderDTO>(order);
@@ -110,39 +116,3 @@ namespace Project.BusinessDomainLayer.Services
         }
     }
 }
-
-
-//public async Task CreateOrderAsync(NewOrderVM newOrder, Guid customerId)
-//{
-//    bool exists = await _customerRepository.CustomerExistsWithIdAsync(customerId);
-//    if (!exists)
-//    {
-//        throw new KeyNotFoundException("Customer not found");
-//    }
-//    var order = _mapper.Map<Order>(newOrder);
-
-//    foreach (var item in order.OrderItems)
-//    {
-//        var product = await _productRepository.GetByIdAsync(item.ProductId);
-//        if (product.IsDeleted)
-//        {
-//            throw new NotFoundException("One of the products is not found");
-//        }
-//        if (product == null || product.StockQuantity < item.Quantity)
-//        {
-//            throw new InvalidOperationException($"Product {product?.Name} doesn't have enough quantities");
-//        }
-
-//        product.StockQuantity -= item.Quantity;
-//        item.Cost = product.Cost * item.Quantity;
-//        item.OrderId = order.OrderId;
-//        order.Amount += item.Cost;
-
-//        await _orderItemRepository.AddAsync(item);
-//    }
-
-//    order.TotalAmount = order.Amount + order.Tax;
-
-//    await _orderRepository.AddAsync(order);
-//    await _unitOfWork.CompleteAsync();
-//}

@@ -7,8 +7,9 @@ namespace Project.BusinessDomainLayer.VMs
     {
         [Required(ErrorMessage = "Name is required")]
         [StringLength(50, MinimumLength = 2, ErrorMessage = "Name must be at least 2 characters and no more than 50 characters")]
-        [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z]{2,}$", ErrorMessage = "Name must contain only letters")]
+        [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z\s]{2,}$", ErrorMessage = "Name must contain only letters and spaces")]
         public required string Name { get; set; }
+
 
         [Required(ErrorMessage = "Address is required")]
         [StringLength(300, ErrorMessage = "Address shouldn't be over 300 characters")]

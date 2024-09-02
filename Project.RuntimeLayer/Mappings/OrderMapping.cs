@@ -9,22 +9,22 @@ namespace Project.RuntimeLayer.Mappings
     {
         public OrderMappingProfile()
         {
-            CreateMap<OrderItem, NewOrderItemDTO>().ReverseMap();
             CreateMap<OrderVM, Order>().ReverseMap();
             CreateMap<OrderVM, NewOrderDTO>();
-            CreateMap<OrderItemVM, OrderItem>().ReverseMap();
-            CreateMap<OrderItemVM,  OrderItemDTO>().ReverseMap(); 
             CreateMap<Order, OrderDTO>()
             .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems)).ReverseMap();
+            CreateMap<OrderDTO, OrderResVM>();
+            CreateMap<NewOrderDTO, Order>()
+            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.CustomerId));
+            CreateMap<OrderItemVM, OrderItem>().ReverseMap();
+            CreateMap<OrderItemVM, OrderItemDTO>().ReverseMap();
+            CreateMap<NewOrderItemDTO, OrderItem>()
+            .ForMember(dest => dest.OrderitemId, opt => opt.MapFrom(src => src.Id));
+            CreateMap<OrderItem, NewOrderItemDTO>().ReverseMap();
+            CreateMap<OrderItemVM, NewOrderItemDTO>();
             CreateMap<OrderItem, OrderItemDTO>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OrderitemId));
             CreateMap<OrderItemDTO, OrderItemResVM>();
-            CreateMap<OrderDTO, OrderResVM>();
-            CreateMap<OrderItemVM, NewOrderItemDTO>();
-            CreateMap<NewOrderDTO, Order>()
-            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.CustomerId));
-            CreateMap<NewOrderItemDTO, OrderItem>()
-            .ForMember(dest => dest.OrderitemId, opt => opt.MapFrom(src => src.Id));
         }
     }
 }

@@ -7,7 +7,6 @@ using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using ErrorResponse = Project.BusinessDomainLayer.Responses.ErrorResponse;
 using Project.BusinessDomainLayer.Responses;
 
 namespace Project.PresentationLayer.Controllers
@@ -21,7 +20,7 @@ namespace Project.PresentationLayer.Controllers
         private readonly ILogger<ProductController> _logger;
         private readonly IMapper _mapper;
 
-        public ProductController(IProductService productService, JwtService jwtService, ILogger<ProductController> logger, IMapper mapper)
+        public ProductController(IProductService productService, /*JwtService jwtService,*/ ILogger<ProductController> logger, IMapper mapper)
         {
             _productService = productService;
             //_jwtService = jwtService;
@@ -36,12 +35,12 @@ namespace Project.PresentationLayer.Controllers
             {
                 var newProductDTO = _mapper.Map<NewProductDTO>(productVM);
                 var productDTO = await _productService.CreateProductAsync(newProductDTO);
-                var newProductVM = _mapper.Map<ProductResVM>(productDTO);
+                var ProductResVM = _mapper.Map<ProductResVM>(productDTO);
                 var successResponse = new SuccessResponse<ProductResVM>
                 {
                     StatusCode = 200,
                     Message = "Product Added Successfully",
-                    Data = newProductVM
+                    Data = ProductResVM
                 };
                 return Ok(successResponse);
             }
@@ -118,7 +117,7 @@ namespace Project.PresentationLayer.Controllers
             try
             {
                 await _productService.DeleteProductAsync(id);
-                var successResponse = new SuccessResponse<ProductResVM>
+                var successResponse = new BaseResponse
                 {
                     StatusCode = 200,
                     Message = "Product Deleted Successfully"
@@ -129,7 +128,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Delete Product"
@@ -140,7 +139,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Delete Product"
@@ -168,7 +167,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Products"
@@ -179,7 +178,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Products"
@@ -189,7 +188,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
         [HttpGet("getproductbyid/{id}")]
-        public async Task<IActionResult> GetProductById(Guid id, Guid customerId)
+        public async Task<IActionResult> GetProductById(Guid id)
         {
             try
             {
@@ -207,7 +206,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Product"
@@ -218,7 +217,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Retrieve Product"
@@ -230,26 +229,3 @@ namespace Project.PresentationLayer.Controllers
 
     }
 }
-
-
-//[HttpPatch("updateproduct/{id}")]
-//[Authorize]
-//public async Task<IActionResult> PatchProduct(Guid id, [FromBody] JsonPatchDocument<ProductDTO> patchDoc)
-//{
-//    if (patchDoc == null)
-//    {
-//        return BadRequest("Patch document is null");
-//    }
-
-//    var isAdminClaim = User.FindFirst("IsAdmin")?.Value;
-
-//    if (isAdminClaim != null && bool.TryParse(isAdminClaim, out bool isAdmin) && isAdmin)
-//    {
-//        var productToPatch = _mapper.Map<ProductDTO>(existingProduct);
-//        patchDoc.ApplyTo(productToPatch);
-
-//        if (!TryValidateModel(productToPatch))
-//        {
-//            return ValidationProblem(ModelState);
-//        }
-//    }

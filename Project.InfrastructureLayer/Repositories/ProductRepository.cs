@@ -6,7 +6,7 @@ using Project.InfrastructureLayer.Abstractions;
 
 namespace Project.InfrastructureLayer.Repositories
 {
-    public class ProductRepository:IProductRepository
+    public class ProductRepository : IProductRepository
     {
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _cache;
@@ -18,19 +18,34 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Product> GetByIdAsync(Guid id)
         {
-            return await _context.Products.SingleOrDefaultAsync(p => p.Id == id);
+            var cacheKey = $"Product-{id}";
+
+            if (!_cache.TryGetValue(cacheKey, out Product product))
+            {
+                product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+
+                if (product != null)
+                {
+                    var cacheOptions = new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                        Size = 1
+                    };
+                    _cache.Set(cacheKey, product, cacheOptions);
+                }
+            }
+
+            return product;
         }
 
 
         public async Task<Product> GetByNameAsync(string name)
         {
             var cacheKey = $"Product-{name}";
-            Product product;
-            if (!_cache.TryGetValue(cacheKey, out product))
+            if (!_cache.TryGetValue(cacheKey, out Product product))
             {
-                product = await _context.Products.AsNoTracking()
-                                                   .Where(p => p.Name == name)
-                                                   .SingleOrDefaultAsync();
+                product = await _context.Products.Where(p => p.Name == name)
+                                                 .FirstOrDefaultAsync();
 
                 if (product != null)
                 {
@@ -50,7 +65,10 @@ namespace Project.InfrastructureLayer.Repositories
         public async Task<bool> IsProductExistsAsync(string name)
         {
             var cacheKey = $"ProductExists-{name}";
-            if (!_cache.TryGetValue(cacheKey, out bool exists))
+            var productCacheKey = $"Product-{name}";
+            bool exists = false, productExists = false;
+            Product product = null;
+            if (!_cache.TryGetValue(cacheKey, out exists) && !_cache.TryGetValue(cacheKey, out product))
             {
                 exists = await _context.Products
                                        .AsNoTracking()
@@ -64,14 +82,13 @@ namespace Project.InfrastructureLayer.Repositories
                 _cache.Set(cacheKey, exists, cacheOptions);
 
             }
-
-            return exists;
+            if (product != null)
+            {
+                productExists = true;
+            }
+            return (exists || productExists);
         }
-        public async Task<IEnumerable<Product>> GetAllAsync()
-        {
-            return await _context.Products.ToListAsync();
 
-        }
 
         public async Task<IEnumerable<Product>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
@@ -79,6 +96,7 @@ namespace Project.InfrastructureLayer.Repositories
             if (!_cache.TryGetValue(cacheKey, out IEnumerable<Product> products))
             {
                 products = await _context.Products
+                                         .AsNoTracking()
                                          .Where(p => p.IsDeleted == false)
                                          .Skip((pageNumber - 1) * pageSize)
                                          .Take(pageSize)
@@ -88,7 +106,7 @@ namespace Project.InfrastructureLayer.Repositories
                 {
                     var cacheOptions = new MemoryCacheEntryOptions
                     {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60),
                         Size = 1
                     };
 
@@ -108,18 +126,21 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task AddAsync(Product product)
         {
+            product.UpdatedOn = DateTime.UtcNow;
+            product.CreatedOn = DateTime.UtcNow;
             await _context.Products.AddAsync(product);
             _cache.Remove($"ProductsPage-1");
         }
 
         public async Task RemoveByIdAsync(Guid id)
         {
-            var product = await GetByIdAsync(id);
-            if (product != null)
-            {
-                product.IsDeleted = true;
-                _cache.Remove($"ProductsPage-1");
-            }
+            var product = await _context.Products
+                                        .FirstOrDefaultAsync(p => p.Id == id);
+
+            product.IsDeleted = true;
+            product.UpdatedOn = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            _cache.Remove($"ProductsPage-1");
         }
 
 

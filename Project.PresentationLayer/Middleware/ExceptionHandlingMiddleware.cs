@@ -1,9 +1,7 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using OpenQA.Selenium;
-using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
+﻿using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
 using Project.BusinessDomainLayer.Exceptions.OrderExceptions;
 using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
+using Project.BusinessDomainLayer.Responses;
 using System.Net;
 using ErrorResponse = Project.BusinessDomainLayer.Responses.ErrorResponse;
 
@@ -106,7 +104,7 @@ namespace Project.PresentationLayer.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
 
-            var errorResponse = new ErrorResponse
+            var errorResponse = new BaseResponse
             {
                 StatusCode = (int)statusCode,
                 Message = message

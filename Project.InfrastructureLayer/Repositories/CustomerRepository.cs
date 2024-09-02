@@ -20,12 +20,41 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<Customer> GetByIdAsync(Guid id)
         {
-            return await _context.Set<Customer>().SingleOrDefaultAsync(c => c.Id == id);
+            var cacheKey = $"Customer-{id}";
+
+            if (!_cache.TryGetValue(cacheKey, out Customer customer))
+            {
+                customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id);
+
+                if (customer != null)
+                {
+                    var cacheOptions = new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                        Size = 1
+                    };
+                    _cache.Set(cacheKey, customer, cacheOptions);
+                }
+            }
+
+            return customer;
         }
+
 
         public async Task AddAsync(Customer customer)
         {
-            await _context.Set<Customer>().AddAsync(customer);
+            await _context.Customers.AddAsync(customer);
+            var cacheKey = $"CustomerExists-{customer.Email}";
+            if (_cache.TryGetValue(cacheKey, out _))
+            {
+                _cache.Remove(cacheKey);
+            }
+
+            var idCacheKey = $"CustomerExists-{customer.Id}";
+            if (_cache.TryGetValue(idCacheKey, out _))
+            {
+                _cache.Remove(idCacheKey);
+            }
         }
 
         public async Task<Customer> GetByEmailAsync(string email)
@@ -34,9 +63,8 @@ namespace Project.InfrastructureLayer.Repositories
             Customer customer;
             if (!_cache.TryGetValue(cacheKey, out customer))
             {
-                customer = await _context.Customers.AsNoTracking()
-                                                   .Where(c => c.Email == email)
-                                                   .SingleOrDefaultAsync();
+                customer = await _context.Customers.Where(c => c.Email == email)
+                                                   .FirstOrDefaultAsync();
 
                 if (customer != null)
                 {
@@ -65,7 +93,7 @@ namespace Project.InfrastructureLayer.Repositories
 
                 var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(3),
                     Size = 1
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);

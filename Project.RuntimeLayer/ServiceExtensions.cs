@@ -43,17 +43,22 @@ namespace Project.RuntimeLayer
             });
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
+
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
 
+            services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+
             services.AddTransient<IEncryption, EncryptionService>();
 
-            services.AddSingleton<JwtService>();
+            services.AddSingleton<IJWTService, JwtService>();
+
             var jwtSettings = configuration.GetSection("JwtSettings");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
             services.AddAuthentication(options =>

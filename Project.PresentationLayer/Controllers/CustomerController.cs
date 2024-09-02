@@ -5,8 +5,6 @@ using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
 using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.Responses;
-using Project.RuntimeLayer;
-using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,15 +16,13 @@ namespace Project.PresentationLayer.Controllers
     {
         private readonly ICustomerService _customerService;
         private readonly IMapper _mapper;
-        private readonly IEncryption _encryption;
-        //private readonly IJwtService _jwtService;
+        //private readonly IJWTService _jwtService;
         private readonly ILogger<CustomerController> _logger;
 
-        public CustomerController(ICustomerService customerService, IMapper mapper, IEncryption encryption, ILogger<CustomerController> logger)
+        public CustomerController(ICustomerService customerService, IMapper mapper, ILogger<CustomerController> logger)
         {
             _customerService = customerService;
             _mapper = mapper;
-            _encryption = encryption;
             //_jwtService = jwtService;
             _logger = logger;
         }
@@ -51,7 +47,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "Database update exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Add Customer"
@@ -62,7 +58,7 @@ namespace Project.PresentationLayer.Controllers
             {
                 _logger.LogError(ex, "SQL exception caught in controller");
 
-                var errorResponse = new ErrorResponse
+                var errorResponse = new BaseResponse
                 {
                     StatusCode = 400,
                     Message = "Can’t Add Customer"
@@ -87,10 +83,3 @@ namespace Project.PresentationLayer.Controllers
         }
     }
 }
-
-
-
-//var stopwatch = new Stopwatch();
-//stopwatch.Start();
-//stopwatch.Stop();
-//_logger.LogInformation("Time taken to {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);

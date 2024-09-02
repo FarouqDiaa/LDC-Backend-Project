@@ -3,14 +3,9 @@ using Project.BusinessDomainLayer.DTOs;
 using Project.InfrastructureLayer.Entities;
 using Project.InfrastructureLayer.Abstractions;
 using Project.BusinessDomainLayer.Abstractions;
-using Microsoft.Extensions.Caching.Memory;
-using OpenQA.Selenium;
-using Project.BusinessDomainLayer.VMs;
-using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using Project.BusinessDomainLayer.Exceptions.ProductExceptions;
 using Project.BusinessDomainLayer.Exceptions.CustomerExceptions;
+using Project.BusinessDomainLayer.VMs;
 
 namespace Project.BusinessDomainLayer.Services
 {
@@ -18,15 +13,13 @@ namespace Project.BusinessDomainLayer.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IMemoryCache _cache;
         private readonly IProductRepository _productRepository;
         private readonly ICustomerRepository _customerRepository;
 
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache cache, IProductRepository productRepository, ICustomerRepository customerRepository)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, IProductRepository productRepository, ICustomerRepository customerRepository)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _cache = cache;
             _productRepository = productRepository;
             _customerRepository = customerRepository;
         }
@@ -40,6 +33,8 @@ namespace Project.BusinessDomainLayer.Services
                 throw new ProductNameUsedException("Product name used");
             }
             var product = _mapper.Map<Product>(newProduct);
+
+            product.Cost = Math.Round(product.Cost, 2);
             await _productRepository.AddAsync(product);
             await _unitOfWork.CompleteAsync();
             return _mapper.Map<ProductDTO>(product);
@@ -47,7 +42,7 @@ namespace Project.BusinessDomainLayer.Services
 
         public async Task<ProductDTO> GetProductByNameAsync(string name) {
             var product = await _productRepository.GetByNameAsync(name);
-            return product == null ? throw new NotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
+            return product == null ? throw new ProductNotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
         }
 
 
@@ -67,6 +62,7 @@ namespace Project.BusinessDomainLayer.Services
 
             var resultProduct = _mapper.Map(updatedProduct, existingProduct);
 
+            resultProduct.Cost = Math.Round(resultProduct.Cost, 2);
             _productRepository.Update(resultProduct);
             await _unitOfWork.CompleteAsync();
             return _mapper.Map<ProductDTO>(resultProduct);
