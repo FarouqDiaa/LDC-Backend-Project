@@ -37,7 +37,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowSpecificOrigin"); // Apply the CORS policy
+app.UseCors("AllowSpecificOrigin");
 
 
 app.UseAuthentication();
