@@ -83,6 +83,12 @@ namespace Project.InfrastructureLayer.Repositories
             var order = await GetByIdAsync(id);
             order.UpdatedOn = DateTime.UtcNow;
             order.IsDeleted = true;
+            var cacheKey = $"OrdersPage-1-{order.CustomerId}";
+            if (_cache.TryGetValue(cacheKey, out _))
+            {
+                _cache.Remove(cacheKey);
+            }
+            _cache.Remove($"Order-{id}");
         }
     }
 }

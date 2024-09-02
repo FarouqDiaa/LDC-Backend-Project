@@ -65,10 +65,7 @@ namespace Project.InfrastructureLayer.Repositories
         public async Task<bool> IsProductExistsAsync(string name)
         {
             var cacheKey = $"ProductExists-{name}";
-            var productCacheKey = $"Product-{name}";
-            bool exists = false, productExists = false;
-            Product product = null;
-            if (!_cache.TryGetValue(cacheKey, out exists) && !_cache.TryGetValue(cacheKey, out product))
+            if (!_cache.TryGetValue(cacheKey, out bool exists))
             {
                 exists = await _context.Products
                                        .AsNoTracking()
@@ -80,13 +77,9 @@ namespace Project.InfrastructureLayer.Repositories
                     Size = 1
                 };
                 _cache.Set(cacheKey, exists, cacheOptions);
+            }
+            return exists;
 
-            }
-            if (product != null)
-            {
-                productExists = true;
-            }
-            return (exists || productExists);
         }
 
 
@@ -117,12 +110,35 @@ namespace Project.InfrastructureLayer.Repositories
             return products;
         }
 
-        public void Update(Product product)
+        public async Task Update(Product product)
         {
-            product.UpdatedOn = DateTime.UtcNow;
-            _context.Products.Update(product);
+            var existingProduct = await _context.Products
+                                                .AsNoTracking()
+                                                .FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            if (existingProduct.Name != product.Name)
+            {
+                _cache.Remove($"ProductExists-{existingProduct.Name}");
+                _cache.Remove($"Product-{existingProduct.Name}");
+            }
+
             _cache.Remove($"ProductsPage-1");
+            _cache.Remove($"ProductsPageAdmin-1");
+
+
+            product.UpdatedOn = DateTime.UtcNow;
+
+            _context.Products.Update(product);
+
+            var cacheOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                Size = 1
+            };
+            _cache.Set($"ProductExists-{product.Name}", true, cacheOptions);
+            _cache.Set($"Product-{product.Name}", product, cacheOptions);
         }
+
 
         public async Task AddAsync(Product product)
         {
@@ -130,6 +146,7 @@ namespace Project.InfrastructureLayer.Repositories
             product.CreatedOn = DateTime.UtcNow;
             await _context.Products.AddAsync(product);
             _cache.Remove($"ProductsPage-1");
+            _cache.Remove($"ProductsPageAdmin-1");
         }
 
         public async Task RemoveByIdAsync(Guid id)
@@ -139,8 +156,11 @@ namespace Project.InfrastructureLayer.Repositories
 
             product.IsDeleted = true;
             product.UpdatedOn = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            _cache.Remove($"ProductExists-{product.Name}");
+            _cache.Remove($"Product-{product.Name}");
+            _cache.Remove($"Product-{product.Id}");
             _cache.Remove($"ProductsPage-1");
+            _cache.Remove($"ProductsPageAdmin-1");
         }
 
 
