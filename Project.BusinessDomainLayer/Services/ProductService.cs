@@ -63,7 +63,7 @@ namespace Project.BusinessDomainLayer.Services
             var resultProduct = _mapper.Map(updatedProduct, existingProduct);
 
             resultProduct.Cost = Math.Round(resultProduct.Cost, 2);
-            _productRepository.Update(resultProduct);
+            await _productRepository.Update(resultProduct);
             await _unitOfWork.CompleteAsync();
             return _mapper.Map<ProductDTO>(resultProduct);
         }
