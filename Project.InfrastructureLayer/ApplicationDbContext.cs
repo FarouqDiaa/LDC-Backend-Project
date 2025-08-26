@@ -16,6 +16,7 @@ namespace Project.InfrastructureLayer
         public DbSet<Order> Orders { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +39,12 @@ namespace Project.InfrastructureLayer
                 .HasMany(p => p.OrderItems)
                 .WithOne(op => op.Product)
                 .HasForeignKey(op => op.ProductId);
+
+            modelBuilder.Entity<Product>()
+                .HasMany(p => p.ProductImages)
+                .WithOne(pi => pi.Product)
+                .HasForeignKey(pi => pi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Order>()
                 .HasMany(o => o.OrderItems)
@@ -76,9 +83,22 @@ namespace Project.InfrastructureLayer
                 .Property(p => p.CreatedOn)
                 .HasDefaultValueSql("GETUTCDATE()");
 
+            modelBuilder.Entity<ProductImage>()
+                .Property(pi => pi.CreatedOn)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<ProductImage>()
+                .Property(pi => pi.UpdatedOn)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<ProductImage>()
+                .Property(pi => pi.IsDeleted)
+                .HasDefaultValue(false);
+
             modelBuilder.Entity<Order>()
                 .Property(o => o.CreatedOn)
                 .HasDefaultValueSql("GETUTCDATE()");
+
             modelBuilder.Entity<Customer>().HasData(
             new Customer
             {

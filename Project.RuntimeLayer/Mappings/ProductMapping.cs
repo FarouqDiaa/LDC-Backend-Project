@@ -2,6 +2,7 @@
 using Project.InfrastructureLayer.Entities;
 using AutoMapper;
 using Project.BusinessDomainLayer.VMs;
+using Project.BusinessDomainLayer.VMs.ProductVMs;
 
 namespace Project.RuntimeLayer.Mappings
 {
@@ -19,6 +20,15 @@ namespace Project.RuntimeLayer.Mappings
                 .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Amount));
             CreateMap<ProductDTO, ProductResVM>()
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Cost));
+
+            CreateMap<ProductImage, ProductImageDTO>();
+            CreateMap<ProductImage, ProductImageVM>();
+
+            CreateMap<Product, ProductDTO>()
+                .ForMember(dest => dest.ProductImages, opt => opt.MapFrom(src => src.ProductImages));
+
+            CreateMap<Product, ProductVM>()
+                .ForMember(dest => dest.ProductImages, opt => opt.MapFrom(src => src.ProductImages));
         }
     }
 }
