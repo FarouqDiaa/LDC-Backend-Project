@@ -3,32 +3,35 @@ using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Project.BusinessDomainLayer.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Project.BusinessDomainLayer.VMs;
+using Project.BusinessDomainLayer.VMs.ProductVMs;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Project.BusinessDomainLayer.Responses;
+using Project.PresentationLayer.Extensions;
 
 namespace Project.PresentationLayer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
-        //private readonly IJwtService _jwtService;
         private readonly ILogger<ProductController> _logger;
         private readonly IMapper _mapper;
 
-        public ProductController(IProductService productService, /*JwtService jwtService,*/ ILogger<ProductController> logger, IMapper mapper)
+        public ProductController(IProductService productService, ILogger<ProductController> logger, IMapper mapper)
         {
             _productService = productService;
-            //_jwtService = jwtService;
             _logger = logger;
             _mapper = mapper;
         }
 
-        [HttpPost("addproduct")]
+        [Authorize(Policy = "AdminOnly")]
+        [HttpPost]
         public async Task<IActionResult> AddProduct([FromBody][Required] ProductVM productVM)
         {
             try
@@ -69,7 +72,8 @@ namespace Project.PresentationLayer.Controllers
         }
 
 
-        [HttpPut("updateproduct/{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(Guid id, [FromBody][Required] ProductVM productVM)
         {
             try
@@ -111,7 +115,8 @@ namespace Project.PresentationLayer.Controllers
 
 
 
-        [HttpDelete("deleteproduct/{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             try
@@ -148,12 +153,15 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        [HttpGet("getallproducts/{customerId}")]
-        public async Task<IActionResult> GetAllProducts(Guid customerId, [FromQuery] int pageNumber = 1)
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 25)
         {
+            var customerId = User.GetCustomerId();
+
             try
             {
-                var products = await _productService.GetAllProductsAsync(pageNumber, customerId);
+                var products = await _productService.GetAllProductsAsync(pageNumber, pageSize, customerId);
                 var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
                 var successResponse = new SuccessResponse<IEnumerable<ProductResVM>>
                 {
@@ -187,12 +195,15 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        [HttpGet("getproductbyid/{id}")]
+        [AllowAnonymous]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
+            var customerId = User.GetCustomerId();
+
             try
             {
-                var product = await _productService.GetProductByIdAsync(id);
+                var product = await _productService.GetProductByIdAsync(id, customerId);
                 var newProductVM = _mapper.Map<ProductResVM>(product);
                 var successResponse = new SuccessResponse<ProductResVM>
                 {

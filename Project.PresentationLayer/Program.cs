@@ -1,4 +1,5 @@
 using Project.RuntimeLayer;
+using Project.RuntimeLayer.Seeding;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Project.PresentationLayer.Middleware;
 
@@ -32,6 +33,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    await DataSeeder.SeedAsync(app.Services);
 }
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

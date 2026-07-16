@@ -8,5 +8,6 @@ namespace Project.BusinessDomainLayer.VMs
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
         public bool IsDeleted { get; set; }
+        public string? Token { get; set; }
     }
 }

@@ -16,14 +16,14 @@ namespace Project.PresentationLayer.Controllers
     {
         private readonly ICustomerService _customerService;
         private readonly IMapper _mapper;
-        //private readonly IJWTService _jwtService;
+        private readonly IJWTService _jwtService;
         private readonly ILogger<CustomerController> _logger;
 
-        public CustomerController(ICustomerService customerService, IMapper mapper, ILogger<CustomerController> logger)
+        public CustomerController(ICustomerService customerService, IMapper mapper, IJWTService jwtService, ILogger<CustomerController> logger)
         {
             _customerService = customerService;
             _mapper = mapper;
-            //_jwtService = jwtService;
+            _jwtService = jwtService;
             _logger = logger;
         }
 
@@ -35,6 +35,7 @@ namespace Project.PresentationLayer.Controllers
                 var newCustomerDTO = _mapper.Map<NewCustomerDTO>(customerVM);
                 var customer = await _customerService.CreateCustomerAsync(newCustomerDTO);
                 var customerResponse = _mapper.Map<CustomerResVM>(customer);
+                customerResponse.Token = _jwtService.GenerateToken(customer.Id, customer.Email, customer.IsAdmin);
                 var successResponse = new SuccessResponse<CustomerResVM>
                 {
                     StatusCode = 200,
@@ -73,6 +74,7 @@ namespace Project.PresentationLayer.Controllers
             var loginDTO = _mapper.Map<LoginDTO>(loginVM);
             var customer = await _customerService.AuthenticateAsync(loginDTO);
             var customerResponse = _mapper.Map<CustomerResVM>(customer);
+            customerResponse.Token = _jwtService.GenerateToken(customer.Id, customer.Email, customer.IsAdmin);
             var successResponse = new SuccessResponse<CustomerResVM>
             {
                 StatusCode = 200,

@@ -38,41 +38,43 @@ namespace Project.InfrastructureLayer.Repositories
             return order;
         }
 
+        private const int DefaultPageSize = 25;
+
         public async Task AddAsync(Order order)
         {
             order.CreatedOn = DateTime.UtcNow;
             order.UpdatedOn = DateTime.UtcNow;
-            var cacheKey = $"OrdersPage-1-{order.CustomerId}";
-            if (_cache.TryGetValue(cacheKey, out _))
-            {
-                _cache.Remove(cacheKey);
-            }
+            _cache.Remove($"OrdersPage-1-{DefaultPageSize}-{order.CustomerId}");
             await _context.Orders.AddAsync(order);
         }
 
 
         public async Task<IEnumerable<Order>> GetAllPagedAsync(int pageNumber, int pageCount, Guid customerId)
         {
-            var cacheKey = $"OrderPage-{pageNumber}-{customerId}";
-            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Order> orders))
+            var cacheable = pageNumber == 1 && pageCount == DefaultPageSize;
+            var cacheKey = $"OrdersPage-{pageNumber}-{pageCount}-{customerId}";
+
+            if (cacheable && _cache.TryGetValue(cacheKey, out IEnumerable<Order> cached))
             {
-                orders = await _context.Orders
-                                 .Where(o => o.CustomerId == customerId && !o.IsDeleted)
-                                 //.Include(o => o.OrderItems)
-                                 .Skip((pageNumber - 1) * pageCount)
-                                 .Take(pageCount)
-                                 .ToListAsync();
+                return cached;
+            }
 
-                if (pageNumber == 1)
+            var orders = await _context.Orders
+                             .Where(o => o.CustomerId == customerId && !o.IsDeleted)
+                             //.Include(o => o.OrderItems)
+                             .Skip((pageNumber - 1) * pageCount)
+                             .Take(pageCount)
+                             .ToListAsync();
+
+            if (cacheable)
+            {
+                var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    var cacheOptions = new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
-                        Size = 1
-                    };
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
+                    Size = 1
+                };
 
-                    _cache.Set(cacheKey, orders, cacheOptions);
-                }
+                _cache.Set(cacheKey, orders, cacheOptions);
             }
 
             return orders;
@@ -83,11 +85,7 @@ namespace Project.InfrastructureLayer.Repositories
             var order = await GetByIdAsync(id);
             order.UpdatedOn = DateTime.UtcNow;
             order.IsDeleted = true;
-            var cacheKey = $"OrdersPage-1-{order.CustomerId}";
-            if (_cache.TryGetValue(cacheKey, out _))
-            {
-                _cache.Remove(cacheKey);
-            }
+            _cache.Remove($"OrdersPage-1-{DefaultPageSize}-{order.CustomerId}");
             _cache.Remove($"Order-{id}");
         }
     }

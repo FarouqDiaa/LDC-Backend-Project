@@ -83,28 +83,34 @@ namespace Project.InfrastructureLayer.Repositories
         }
 
 
+        private const int DefaultPageSize = 25;
+
         public async Task<IEnumerable<Product>> GetAllPagedAsync(int pageNumber, int pageSize)
         {
-            var cacheKey = $"ProductsPage-{pageNumber}";
-            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Product> products))
+            var cacheable = pageNumber == 1 && pageSize == DefaultPageSize;
+            var cacheKey = $"ProductsPage-{pageNumber}-{pageSize}";
+
+            if (cacheable && _cache.TryGetValue(cacheKey, out IEnumerable<Product> cached))
             {
-                products = await _context.Products
-                                         .AsNoTracking()
-                                         .Where(p => p.IsDeleted == false)
-                                         .Skip((pageNumber - 1) * pageSize)
-                                         .Take(pageSize)
-                                         .ToListAsync();
+                return cached;
+            }
 
-                if (pageNumber == 1)
+            var products = await _context.Products
+                                     .AsNoTracking()
+                                     .Where(p => p.IsDeleted == false)
+                                     .Skip((pageNumber - 1) * pageSize)
+                                     .Take(pageSize)
+                                     .ToListAsync();
+
+            if (cacheable)
+            {
+                var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    var cacheOptions = new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60),
-                        Size = 1
-                    };
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60),
+                    Size = 1
+                };
 
-                    _cache.Set(cacheKey, products, cacheOptions);
-                }
+                _cache.Set(cacheKey, products, cacheOptions);
             }
 
             return products;
@@ -122,8 +128,8 @@ namespace Project.InfrastructureLayer.Repositories
                 _cache.Remove($"Product-{existingProduct.Name}");
             }
 
-            _cache.Remove($"ProductsPage-1");
-            _cache.Remove($"ProductsPageAdmin-1");
+            _cache.Remove($"ProductsPage-1-{DefaultPageSize}");
+            _cache.Remove($"ProductsPageAdmin-1-{DefaultPageSize}");
 
 
             product.UpdatedOn = DateTime.UtcNow;
@@ -145,8 +151,8 @@ namespace Project.InfrastructureLayer.Repositories
             product.UpdatedOn = DateTime.UtcNow;
             product.CreatedOn = DateTime.UtcNow;
             await _context.Products.AddAsync(product);
-            _cache.Remove($"ProductsPage-1");
-            _cache.Remove($"ProductsPageAdmin-1");
+            _cache.Remove($"ProductsPage-1-{DefaultPageSize}");
+            _cache.Remove($"ProductsPageAdmin-1-{DefaultPageSize}");
         }
 
         public async Task RemoveByIdAsync(Guid id)
@@ -159,8 +165,8 @@ namespace Project.InfrastructureLayer.Repositories
             _cache.Remove($"ProductExists-{product.Name}");
             _cache.Remove($"Product-{product.Name}");
             _cache.Remove($"Product-{product.Id}");
-            _cache.Remove($"ProductsPage-1");
-            _cache.Remove($"ProductsPageAdmin-1");
+            _cache.Remove($"ProductsPage-1-{DefaultPageSize}");
+            _cache.Remove($"ProductsPageAdmin-1-{DefaultPageSize}");
         }
 
 
@@ -188,24 +194,28 @@ namespace Project.InfrastructureLayer.Repositories
 
         public async Task<IEnumerable<Product>> GetAllPagedAsAdminAsync(int pageNumber, int pageSize)
         {
-            var cacheKey = $"ProductsPageAdmin-{pageNumber}";
-            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Product> products))
+            var cacheable = pageNumber == 1 && pageSize == DefaultPageSize;
+            var cacheKey = $"ProductsPageAdmin-{pageNumber}-{pageSize}";
+
+            if (cacheable && _cache.TryGetValue(cacheKey, out IEnumerable<Product> cached))
             {
-                products = await _context.Products
-                                         .Skip((pageNumber - 1) * pageSize)
-                                         .Take(pageSize)
-                                         .ToListAsync();
+                return cached;
+            }
 
-                if (pageNumber == 1)
+            var products = await _context.Products
+                                     .Skip((pageNumber - 1) * pageSize)
+                                     .Take(pageSize)
+                                     .ToListAsync();
+
+            if (cacheable)
+            {
+                var cacheOptions = new MemoryCacheEntryOptions
                 {
-                    var cacheOptions = new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                        Size = 1
-                    };
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
+                };
 
-                    _cache.Set(cacheKey, products, cacheOptions);
-                }
+                _cache.Set(cacheKey, products, cacheOptions);
             }
 
             return products;

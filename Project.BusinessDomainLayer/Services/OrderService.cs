@@ -97,14 +97,26 @@ namespace Project.BusinessDomainLayer.Services
 
 
 
-        public async Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, Guid customerId)
+        private const int DefaultPageSize = 25;
+        private const int MaxPageSize = 100;
+
+        public async Task<IEnumerable<OrderDTO>> GetAllOrdersAsync(int pageNumber, int pageSize, Guid customerId)
         {
             bool exists = await _customerRepository.IsCustomerExistsByIdAsync(customerId);
             if (!exists) {
                 throw new InvalidCustomerIdException("InValid Customer Id");
             }
-            int pageCount = 25;
-            var orders = await _orderRepository.GetAllPagedAsync(pageNumber, pageCount, customerId);
+
+            if (pageNumber <= 0)
+            {
+                pageNumber = 1;
+            }
+            if (pageSize <= 0 || pageSize > MaxPageSize)
+            {
+                pageSize = DefaultPageSize;
+            }
+
+            var orders = await _orderRepository.GetAllPagedAsync(pageNumber, pageSize, customerId);
             return orders == null ? throw new OrderNotFoundException("User has no orders") : _mapper.Map<IEnumerable<OrderDTO>>(orders);
         }
 

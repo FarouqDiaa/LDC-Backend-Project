@@ -2,8 +2,10 @@
 using Project.BusinessDomainLayer.Abstractions;
 using Project.BusinessDomainLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Project.BusinessDomainLayer.VMs;
 using Project.BusinessDomainLayer.Responses;
+using Project.PresentationLayer.Extensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +13,7 @@ namespace Project.PresentationLayer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -25,12 +28,16 @@ namespace Project.PresentationLayer.Controllers
         }
 
 
-        [HttpPost("addorder")]
+        [HttpPost]
         public async Task<IActionResult> AddOrder(OrderVM newOrder)
         {
+            var customerId = User.GetCustomerId();
+            if (customerId is null) return Unauthorized();
+
             try
             {
                 var newOrderDTO = _mapper.Map<NewOrderDTO>(newOrder);
+                newOrderDTO.CustomerId = customerId.Value;
                 var order = await _orderService.CreateOrderAsync(newOrderDTO);
 
                 var orderRes = _mapper.Map<OrderResVM>(order);
@@ -67,7 +74,7 @@ namespace Project.PresentationLayer.Controllers
         }
 
 
-        [HttpDelete("deleteorder/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(Guid id)
         {
             try
@@ -105,12 +112,15 @@ namespace Project.PresentationLayer.Controllers
             }
         }
 
-        [HttpGet("getallorders/{customerId}")]
-        public async Task<IActionResult> GetAllOrders(Guid customerId, [FromQuery] int pageNumber = 1)
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 25)
         {
+            var customerId = User.GetCustomerId();
+            if (customerId is null) return Unauthorized();
+
             try
             {
-                var orders = await _orderService.GetAllOrdersAsync(pageNumber, customerId);
+                var orders = await _orderService.GetAllOrdersAsync(pageNumber, pageSize, customerId.Value);
                 var orderRes = _mapper.Map<IEnumerable<OrderResVM>>(orders);
                 var successResponse = new SuccessResponse<IEnumerable<OrderResVM>>
                 {

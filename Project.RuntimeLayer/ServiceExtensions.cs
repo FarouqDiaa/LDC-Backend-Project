@@ -68,6 +68,7 @@ namespace Project.RuntimeLayer
             })
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -79,6 +80,12 @@ namespace Project.RuntimeLayer
                     IssuerSigningKey = new SymmetricSecurityKey(secretKey)
                 };
             });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireClaim("IsAdmin", "True"));
+            });
+
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));

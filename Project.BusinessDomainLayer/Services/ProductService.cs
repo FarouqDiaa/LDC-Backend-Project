@@ -84,36 +84,56 @@ namespace Project.BusinessDomainLayer.Services
         }
 
 
-        public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, Guid customerId)
+        private const int DefaultPageSize = 25;
+        private const int MaxPageSize = 100;
+
+        public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, int pageSize, Guid? customerId)
         {
-            bool exists = await _customerRepository.IsCustomerExistsByIdAsync(customerId);
-            if (!exists)
+            bool isAdmin = false;
+            if (customerId is not null)
             {
-                throw new InvalidCustomerIdException("InValid Customer Id");
+                bool exists = await _customerRepository.IsCustomerExistsByIdAsync(customerId.Value);
+                if (!exists)
+                {
+                    throw new InvalidCustomerIdException("InValid Customer Id");
+                }
+                isAdmin = await _customerRepository.IsAdmin(customerId.Value);
             }
-            bool isAdmin = await _customerRepository.IsAdmin(customerId);
-            int pageCount = 25;
+
             if (pageNumber <= 0)
             {
                 pageNumber = 1;
             }
+            if (pageSize <= 0 || pageSize > MaxPageSize)
+            {
+                pageSize = DefaultPageSize;
+            }
+
             IEnumerable<Product> products;
             if (isAdmin)
             {
-                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageCount) ?? throw new ProductNotFoundException("No Products Found");
+                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageSize) ?? throw new ProductNotFoundException("No Products Found");
             }
             else
             {
-                products = await _productRepository.GetAllPagedAsync(pageNumber, pageCount) ?? throw new ProductNotFoundException("No Products Found");
+                products = await _productRepository.GetAllPagedAsync(pageNumber, pageSize) ?? throw new ProductNotFoundException("No Products Found");
             }
             return _mapper.Map<IEnumerable<ProductDTO>>(products);
         }
 
 
-        public async Task<ProductDTO> GetProductByIdAsync(Guid id)
+        public async Task<ProductDTO> GetProductByIdAsync(Guid id, Guid? customerId)
         {
             var product = await _productRepository.GetByIdAsync(id);
-            return product == null ? throw new ProductNotFoundException("Product not found") : _mapper.Map<ProductDTO>(product);
+            if (product == null) throw new ProductNotFoundException("Product not found");
+
+            if (product.IsDeleted)
+            {
+                bool isAdmin = customerId is not null && await _customerRepository.IsAdmin(customerId.Value);
+                if (!isAdmin) throw new ProductNotFoundException("Product not found");
+            }
+
+            return _mapper.Map<ProductDTO>(product);
         }
 
 
