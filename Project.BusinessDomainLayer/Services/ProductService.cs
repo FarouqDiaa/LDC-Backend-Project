@@ -32,12 +32,46 @@ namespace Project.BusinessDomainLayer.Services
             {
                 throw new ProductNameUsedException("Product name used");
             }
+            ApplyCoverImage(newProduct.CoverImageUrl, newProduct.ProductImages);
+
             var product = _mapper.Map<Product>(newProduct);
 
             product.Cost = Math.Round(product.Cost, 2);
             await _productRepository.AddAsync(product);
             await _unitOfWork.CompleteAsync();
             return _mapper.Map<ProductDTO>(product);
+        }
+
+        // The API takes the cover url as its own field; it is stored as an ordinary
+        // image row flagged IsCover so the gallery stays a single collection and
+        // listings can still pull the cover out cheaply.
+        private static void ApplyCoverImage(string? coverImageUrl, List<ProductImageDTO> images)
+        {
+            foreach (var image in images)
+            {
+                image.IsCover = false;
+            }
+
+            if (string.IsNullOrWhiteSpace(coverImageUrl))
+            {
+                // No explicit cover — promote the first gallery image so listings
+                // still have something to show.
+                if (images.Count > 0)
+                {
+                    images[0].IsCover = true;
+                }
+                return;
+            }
+
+            var existing = images.FirstOrDefault(i => i.Url == coverImageUrl);
+            if (existing is not null)
+            {
+                existing.IsCover = true;
+            }
+            else
+            {
+                images.Insert(0, new ProductImageDTO { Url = coverImageUrl, IsCover = true });
+            }
         }
 
         public async Task<ProductDTO> GetProductByNameAsync(string name) {
@@ -64,8 +98,18 @@ namespace Project.BusinessDomainLayer.Services
 
             resultProduct.Cost = Math.Round(resultProduct.Cost, 2);
             await _productRepository.Update(resultProduct);
+
+            // Images are mapped separately: overwriting the tracked collection
+            // would orphan the existing rows.
+            ApplyCoverImage(updatedProduct.CoverImageUrl, updatedProduct.ProductImages);
+            var images = _mapper.Map<List<ProductImage>>(updatedProduct.ProductImages);
+            await _productRepository.ReplaceImagesAsync(productId, images);
+
             await _unitOfWork.CompleteAsync();
-            return _mapper.Map<ProductDTO>(resultProduct);
+
+            // Re-read so the response carries the images that were just written.
+            var saved = await _productRepository.GetByIdAsync(productId);
+            return _mapper.Map<ProductDTO>(saved ?? resultProduct);
         }
 
 
@@ -87,7 +131,7 @@ namespace Project.BusinessDomainLayer.Services
         private const int DefaultPageSize = 25;
         private const int MaxPageSize = 100;
 
-        public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber, int pageSize, Guid? customerId)
+        public async Task<(IEnumerable<ProductDTO> Items, int TotalCount)> GetAllProductsAsync(int pageNumber, int pageSize, Guid? customerId, string? type = null)
         {
             bool isAdmin = false;
             if (customerId is not null)
@@ -112,15 +156,57 @@ namespace Project.BusinessDomainLayer.Services
             IEnumerable<Product> products;
             if (isAdmin)
             {
-                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageSize) ?? throw new ProductNotFoundException("No Products Found");
+                products = await _productRepository.GetAllPagedAsAdminAsync(pageNumber, pageSize, type) ?? throw new ProductNotFoundException("No Products Found");
             }
             else
             {
-                products = await _productRepository.GetAllPagedAsync(pageNumber, pageSize) ?? throw new ProductNotFoundException("No Products Found");
+                products = await _productRepository.GetAllPagedAsync(pageNumber, pageSize, type) ?? throw new ProductNotFoundException("No Products Found");
             }
+
+            // Admins see soft-deleted products, so the count must match that scope.
+            var totalCount = await _productRepository.GetProductsCountAsync(type, includeDeleted: isAdmin);
+
+            var items = _mapper.Map<IEnumerable<ProductDTO>>(products);
+            return (items, totalCount);
+        }
+
+
+        // ── Home-page storefront sections ──────────────────────────────────
+
+        private const int DefaultSectionSize = 10;
+        private const int LastPiecesMaxStock = 10;
+
+        private static int NormalizeCount(int count) =>
+            count <= 0 || count > MaxPageSize ? DefaultSectionSize : count;
+
+        public async Task<IEnumerable<ProductDTO>> GetBestSellersAsync(int count)
+        {
+            var products = await _productRepository.GetBestSellersAsync(NormalizeCount(count));
             return _mapper.Map<IEnumerable<ProductDTO>>(products);
         }
 
+        public async Task<IEnumerable<ProductDTO>> GetNewArrivalsAsync(int count)
+        {
+            var products = await _productRepository.GetNewArrivalsAsync(NormalizeCount(count));
+            return _mapper.Map<IEnumerable<ProductDTO>>(products);
+        }
+
+        public async Task<IEnumerable<ProductDTO>> GetLastPiecesAsync(int count)
+        {
+            var products = await _productRepository.GetLastPiecesAsync(NormalizeCount(count), LastPiecesMaxStock);
+            return _mapper.Map<IEnumerable<ProductDTO>>(products);
+        }
+
+        public async Task<IEnumerable<CategoryDTO>> GetCategoriesAsync()
+        {
+            var categories = await _productRepository.GetCategoriesAsync();
+            return categories.Select(c => new CategoryDTO
+            {
+                Type = c.Type,
+                Count = c.Count,
+                SampleImageUrl = c.SampleImageUrl
+            });
+        }
 
         public async Task<ProductDTO> GetProductByIdAsync(Guid id, Guid? customerId)
         {

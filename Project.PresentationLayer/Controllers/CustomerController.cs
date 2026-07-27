@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Project.BusinessDomainLayer.Abstractions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Project.BusinessDomainLayer.VMs;
 using System.ComponentModel.DataAnnotations;
 using Project.BusinessDomainLayer.DTOs;
@@ -82,6 +83,40 @@ namespace Project.PresentationLayer.Controllers
                 Data = customerResponse
             };
             return Ok(successResponse);
+        }
+
+        [Authorize(Policy = "AdminOnly")]
+        [HttpGet]
+        public async Task<IActionResult> GetAllCustomers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 25)
+        {
+            try
+            {
+                var (customers, totalCount) = await _customerService.GetAllCustomersAsync(pageNumber, pageSize);
+                var customersRes = _mapper.Map<IEnumerable<CustomerResVM>>(customers);
+
+                return Ok(new SuccessResponse<PagedResultVM<CustomerResVM>>
+                {
+                    StatusCode = 200,
+                    Message = "Customers Retrieved Successfully",
+                    Data = new PagedResultVM<CustomerResVM>
+                    {
+                        Items = customersRes,
+                        TotalCount = totalCount,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize
+                    }
+                });
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL exception caught in controller");
+
+                return BadRequest(new BaseResponse
+                {
+                    StatusCode = 400,
+                    Message = "Can’t Retrieve Customers"
+                });
+            }
         }
     }
 }

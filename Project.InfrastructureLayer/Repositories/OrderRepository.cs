@@ -49,6 +49,31 @@ namespace Project.InfrastructureLayer.Repositories
         }
 
 
+        public async Task<IEnumerable<Order>> GetAllPagedAsAdminAsync(int pageNumber, int pageCount)
+        {
+            return await _context.Orders
+                         .AsNoTracking()
+                         .Where(o => !o.IsDeleted)
+                         .Include(o => o.OrderItems)
+                         .Include(o => o.Customer)
+                         .OrderByDescending(o => o.CreatedOn)
+                         .Skip((pageNumber - 1) * pageCount)
+                         .Take(pageCount)
+                         .ToListAsync();
+        }
+
+        public async Task<int> GetOrdersCountAsync(Guid? customerId = null)
+        {
+            var query = _context.Orders.AsNoTracking().Where(o => !o.IsDeleted);
+
+            if (customerId is not null)
+            {
+                query = query.Where(o => o.CustomerId == customerId.Value);
+            }
+
+            return await query.CountAsync();
+        }
+
         public async Task<IEnumerable<Order>> GetAllPagedAsync(int pageNumber, int pageCount, Guid customerId)
         {
             var cacheable = pageNumber == 1 && pageCount == DefaultPageSize;
@@ -60,8 +85,11 @@ namespace Project.InfrastructureLayer.Repositories
             }
 
             var orders = await _context.Orders
+                             .AsNoTracking()
                              .Where(o => o.CustomerId == customerId && !o.IsDeleted)
-                             //.Include(o => o.OrderItems)
+                             .Include(o => o.OrderItems)
+                             .Include(o => o.Customer)
+                             .OrderByDescending(o => o.CreatedOn)
                              .Skip((pageNumber - 1) * pageCount)
                              .Take(pageCount)
                              .ToListAsync();

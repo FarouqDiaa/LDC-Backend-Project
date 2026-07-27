@@ -8,5 +8,6 @@ namespace Project.BusinessDomainLayer.Abstractions
         public Task<CustomerDTO> AuthenticateAsync(LoginDTO loginDTO);
         public Task<CustomerDTO> GetCustomerByEmailAsync(string email);
         public Task<bool> IsTheUserAdmin(Guid id);
+        public Task<(IEnumerable<CustomerDTO> Items, int TotalCount)> GetAllCustomersAsync(int pageNumber, int pageSize);
     }
 }

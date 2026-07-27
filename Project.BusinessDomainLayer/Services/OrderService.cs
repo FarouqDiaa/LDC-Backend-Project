@@ -116,8 +116,15 @@ namespace Project.BusinessDomainLayer.Services
                 pageSize = DefaultPageSize;
             }
 
-            var orders = await _orderRepository.GetAllPagedAsync(pageNumber, pageSize, customerId);
-            return orders == null ? throw new OrderNotFoundException("User has no orders") : _mapper.Map<IEnumerable<OrderDTO>>(orders);
+            // Admins manage every customer's orders; everyone else sees only their own.
+            var isAdmin = await _customerRepository.IsAdmin(customerId);
+
+            var orders = isAdmin
+                ? await _orderRepository.GetAllPagedAsAdminAsync(pageNumber, pageSize)
+                : await _orderRepository.GetAllPagedAsync(pageNumber, pageSize, customerId);
+
+            // An empty list is a valid result, not an error.
+            return _mapper.Map<IEnumerable<OrderDTO>>(orders ?? []);
         }
 
         public async Task DeleteOrderAsync(Guid id)

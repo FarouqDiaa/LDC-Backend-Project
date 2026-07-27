@@ -11,6 +11,9 @@ namespace Project.BusinessDomainLayer.VMs
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
 
+        /// <summary>Cover image url, also present in <see cref="ProductImages"/>.</summary>
+        public string? CoverImageUrl { get; set; }
+
         public List<ProductImageVM> ProductImages { get; set; } = new();
     }
 }

@@ -10,5 +10,9 @@ namespace Project.BusinessDomainLayer.DTOs
 
         public DateTime UpdatedOn { get; set; } = DateTime.Now;
         public DateTime CreatedOn { get; set; } = DateTime.Now;
+
+        public string? CoverImageUrl { get; set; }
+
+        public List<ProductImageDTO> ProductImages { get; set; } = new();
     }
 }

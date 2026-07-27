@@ -9,5 +9,12 @@ namespace Project.BusinessDomainLayer.DTOs
 
         [Required(ErrorMessage = "Customer Id is required")]
         public required Guid CustomerId { get; set; }
+
+        // Shipping details captured at checkout.
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? Notes { get; set; }
     }
 }

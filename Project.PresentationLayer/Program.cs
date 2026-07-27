@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder => builder
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
@@ -33,13 +33,21 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    await DataSeeder.SeedAsync(app.Services);
+
+    // Seeding runs only when explicitly enabled (SeedData: true). Off by
+    // default so the database isn't repopulated on every startup.
+    if (app.Configuration.GetValue<bool>("SeedData"))
+    {
+        await DataSeeder.SeedAsync(app.Services);
+    }
 }
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseHttpsRedirection();
-
+// CORS must run before HTTPS redirection: a 307 redirect carries no CORS
+// headers, so the browser reports the preflight as a CORS failure.
 app.UseCors("AllowSpecificOrigin");
+
+app.UseHttpsRedirection();
 
 
 app.UseAuthentication();

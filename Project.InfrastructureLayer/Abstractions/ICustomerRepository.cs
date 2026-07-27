@@ -12,5 +12,9 @@ namespace Project.InfrastructureLayer.Abstractions
         public Task<bool> IsCustomerExistsByIdAsync(Guid id);
 
         public Task<bool> IsAdmin(Guid id);
+
+        /// <summary>All customers with their order stats — admin only.</summary>
+        public Task<IEnumerable<Customer>> GetAllPagedAsync(int pageNumber, int pageSize);
+        public Task<int> GetCustomersCountAsync();
     }
 }

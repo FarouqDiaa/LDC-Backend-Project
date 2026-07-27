@@ -10,7 +10,6 @@ namespace Project.RuntimeLayer.Seeding
     public static class DataSeeder
     {
         private const int CustomersToSeed = 10;
-        private const int ProductsToSeed = 20;
         private const int OrdersToSeed = 10;
 
         public static async Task SeedAsync(IServiceProvider services)
@@ -20,7 +19,11 @@ namespace Project.RuntimeLayer.Seeding
             var encryption = scope.ServiceProvider.GetRequiredService<IEncryption>();
 
             var customers = await SeedCustomersAsync(context, encryption);
-            var products = await SeedProductsAsync(context);
+            // Products are no longer seeded — order seeding uses whatever
+            // products already exist in the database.
+            var products = await context.Products
+                                        .Where(p => !p.IsDeleted)
+                                        .ToListAsync();
             await SeedOrdersAsync(context, customers, products);
         }
 
@@ -51,53 +54,6 @@ namespace Project.RuntimeLayer.Seeding
 
             existingCustomers.AddRange(newCustomers);
             return existingCustomers;
-        }
-
-        private static async Task<List<Product>> SeedProductsAsync(ApplicationDbContext context)
-        {
-            var existingProducts = await context.Products.ToListAsync();
-            if (existingProducts.Count >= ProductsToSeed) return existingProducts;
-
-            var productFaker = new Faker<Product>()
-                .RuleFor(p => p.Id, f => Guid.NewGuid())
-                .RuleFor(p => p.Name, (f, p) => $"{f.Commerce.ProductName()} {f.IndexFaker}")
-                .RuleFor(p => p.Description, f => f.Commerce.ProductDescription())
-                .RuleFor(p => p.Type, f => f.Commerce.ProductAdjective())
-                .RuleFor(p => p.Status, f => f.PickRandom("Active", "InActive"))
-                .RuleFor(p => p.Cost, f => Math.Round(f.Random.Double(5, 500), 2))
-                .RuleFor(p => p.StockQuantity, f => f.Random.Number(0, 200))
-                .RuleFor(p => p.CreatedOn, f => DateTime.UtcNow)
-                .RuleFor(p => p.UpdatedOn, f => DateTime.UtcNow);
-
-            var newProducts = productFaker.Generate(ProductsToSeed - existingProducts.Count);
-            await context.Products.AddRangeAsync(newProducts);
-            await context.SaveChangesAsync();
-
-            var imageFaker = new Faker<ProductImage>()
-                .RuleFor(pi => pi.Id, f => Guid.NewGuid())
-                .RuleFor(pi => pi.ProductimageId, f => Guid.NewGuid())
-                .RuleFor(pi => pi.Url, f => f.Image.PicsumUrl())
-                .RuleFor(pi => pi.CreatedOn, f => DateTime.UtcNow)
-                .RuleFor(pi => pi.UpdatedOn, f => DateTime.UtcNow);
-
-            var random = new Random();
-            var images = new List<ProductImage>();
-            foreach (var product in newProducts)
-            {
-                var imageCount = random.Next(1, 4);
-                for (var i = 0; i < imageCount; i++)
-                {
-                    var image = imageFaker.Generate();
-                    image.ProductId = product.Id;
-                    images.Add(image);
-                }
-            }
-
-            await context.ProductImages.AddRangeAsync(images);
-            await context.SaveChangesAsync();
-
-            existingProducts.AddRange(newProducts);
-            return existingProducts;
         }
 
         private static async Task SeedOrdersAsync(ApplicationDbContext context, List<Customer> customers, List<Product> products)

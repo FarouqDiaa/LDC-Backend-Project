@@ -27,5 +27,20 @@ namespace Project.BusinessDomainLayer.DTOs
         [Required(ErrorMessage = "StockQuantity is required")]
         [Range(0, int.MaxValue, ErrorMessage = "StockQuantity must be a positive value")]
         public int StockQuantity { get; set; }
+
+        public string? Sku { get; set; }
+
+        // Pricing
+        public string? DiscountType { get; set; }
+        public double DiscountPercentage { get; set; }
+        public string? TaxClass { get; set; }
+        public double VatAmount { get; set; }
+
+        // Shipping
+        public bool IsPhysical { get; set; } = true;
+        public string? Weight { get; set; }
+        public string? Height { get; set; }
+        public string? Length { get; set; }
+        public string? Width { get; set; }
     }
 }

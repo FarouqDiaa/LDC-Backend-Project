@@ -155,19 +155,25 @@ namespace Project.PresentationLayer.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 25)
+        public async Task<IActionResult> GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? type = null)
         {
             var customerId = User.GetCustomerId();
 
             try
             {
-                var products = await _productService.GetAllProductsAsync(pageNumber, pageSize, customerId);
+                var (products, totalCount) = await _productService.GetAllProductsAsync(pageNumber, pageSize, customerId, type);
                 var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
-                var successResponse = new SuccessResponse<IEnumerable<ProductResVM>>
+                var successResponse = new SuccessResponse<PagedResultVM<ProductResVM>>
                 {
                     StatusCode = 200,
                     Message = "Products Retrieved Successfully",
-                    Data = productsRes
+                    Data = new PagedResultVM<ProductResVM>
+                    {
+                        Items = productsRes,
+                        TotalCount = totalCount,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize
+                    }
                 };
                 return Ok(successResponse);
             }
@@ -193,6 +199,64 @@ namespace Project.PresentationLayer.Controllers
                 };
                 return BadRequest(errorResponse);
             }
+        }
+
+        // ── Home-page storefront sections (public) ─────────────────────────
+
+        [AllowAnonymous]
+        [HttpGet("best-sellers")]
+        public async Task<IActionResult> GetBestSellers([FromQuery] int count = 10)
+        {
+            var products = await _productService.GetBestSellersAsync(count);
+            var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
+            return Ok(new SuccessResponse<IEnumerable<ProductResVM>>
+            {
+                StatusCode = 200,
+                Message = "Best Sellers Retrieved Successfully",
+                Data = productsRes
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("new-arrivals")]
+        public async Task<IActionResult> GetNewArrivals([FromQuery] int count = 10)
+        {
+            var products = await _productService.GetNewArrivalsAsync(count);
+            var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
+            return Ok(new SuccessResponse<IEnumerable<ProductResVM>>
+            {
+                StatusCode = 200,
+                Message = "New Arrivals Retrieved Successfully",
+                Data = productsRes
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("last-pieces")]
+        public async Task<IActionResult> GetLastPieces([FromQuery] int count = 10)
+        {
+            var products = await _productService.GetLastPiecesAsync(count);
+            var productsRes = _mapper.Map<IEnumerable<ProductResVM>>(products);
+            return Ok(new SuccessResponse<IEnumerable<ProductResVM>>
+            {
+                StatusCode = 200,
+                Message = "Last Pieces Retrieved Successfully",
+                Data = productsRes
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await _productService.GetCategoriesAsync();
+            var categoriesRes = _mapper.Map<IEnumerable<CategoryResVM>>(categories);
+            return Ok(new SuccessResponse<IEnumerable<CategoryResVM>>
+            {
+                StatusCode = 200,
+                Message = "Categories Retrieved Successfully",
+                Data = categoriesRes
+            });
         }
 
         [AllowAnonymous]

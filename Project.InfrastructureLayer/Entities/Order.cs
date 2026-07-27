@@ -11,6 +11,13 @@ namespace Project.InfrastructureLayer.Entities
 
         public double TotalAmount { get; set; }
 
+        // Shipping details captured at checkout.
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? Notes { get; set; }
+
         public Guid CustomerId { get; set; }
 
         public Customer Customer { get; set; }
