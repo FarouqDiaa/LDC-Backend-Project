@@ -17,6 +17,21 @@ namespace Project.InfrastructureLayer.Entities
 
         public int StockQuantity { get; set; }
 
+        public string? Sku { get; set; }
+
+        // Pricing
+        public string? DiscountType { get; set; }
+        public double DiscountPercentage { get; set; }
+        public string? TaxClass { get; set; }
+        public double VatAmount { get; set; }
+
+        // Shipping
+        public bool IsPhysical { get; set; } = true;
+        public string? Weight { get; set; }
+        public string? Height { get; set; }
+        public string? Length { get; set; }
+        public string? Width { get; set; }
+
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
     }

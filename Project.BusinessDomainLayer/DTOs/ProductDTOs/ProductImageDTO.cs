@@ -4,5 +4,6 @@ namespace Project.BusinessDomainLayer.DTOs
     {
         public Guid ProductImageId { get; set; }
         public string Url { get; set; }
+        public bool IsCover { get; set; }
     }
 }

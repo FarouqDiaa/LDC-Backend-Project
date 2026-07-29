@@ -55,6 +55,9 @@ namespace Project.RuntimeLayer
 
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
 
+            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
+
             services.AddTransient<IEncryption, EncryptionService>();
 
             services.AddSingleton<IJWTService, JwtService>();

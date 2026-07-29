@@ -15,6 +15,9 @@ namespace Project.BusinessDomainLayer.DTOs
         public DateTime UpdatedOn { get; set; }
         public DateTime CreatedOn { get; set; }
 
+        public string? CustomerName { get; set; }
+        public string? CustomerEmail { get; set; }
+
         public List<OrderItemDTO> OrderItems { get; set; } = [];
 
     }

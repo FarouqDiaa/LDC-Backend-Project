@@ -12,7 +12,11 @@ namespace Project.RuntimeLayer.Mappings
             CreateMap<OrderVM, Order>().ReverseMap();
             CreateMap<OrderVM, NewOrderDTO>();
             CreateMap<Order, OrderDTO>()
-            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems)).ReverseMap();
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : null))
+            .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Email : null))
+            .ReverseMap()
+            .ForMember(dest => dest.Customer, opt => opt.Ignore());
             CreateMap<OrderDTO, OrderResVM>();
             CreateMap<NewOrderDTO, Order>()
             .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.CustomerId));

@@ -122,6 +122,28 @@ namespace Project.InfrastructureLayer.Repositories
 
             return exists;
         }
+        public async Task<IEnumerable<Customer>> GetAllPagedAsync(int pageNumber, int pageSize)
+        {
+            // Orders are included so the caller can derive order counts and
+            // lifetime spend without a second round trip.
+            return await _context.Customers
+                         .AsNoTracking()
+                         .Where(c => !c.IsDeleted)
+                         .Include(c => c.Orders)
+                         .OrderByDescending(c => c.CreatedOn)
+                         .Skip((pageNumber - 1) * pageSize)
+                         .Take(pageSize)
+                         .ToListAsync();
+        }
+
+        public async Task<int> GetCustomersCountAsync()
+        {
+            return await _context.Customers
+                         .AsNoTracking()
+                         .Where(c => !c.IsDeleted)
+                         .CountAsync();
+        }
+
         public async Task<bool> IsAdmin(Guid id)
         {
             var cacheKey = $"IsAdmin-{id}";

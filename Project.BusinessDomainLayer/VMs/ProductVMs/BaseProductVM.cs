@@ -62,5 +62,25 @@ namespace Project.BusinessDomainLayer.VMs
             }
         }
 
+        [StringLength(50, ErrorMessage = "SKU shouldn't be over 50 characters")]
+        public string? Sku { get; set; }
+
+        // Pricing
+        public string? DiscountType { get; set; }
+
+        [Range(0, 100, ErrorMessage = "Discount percentage must be between 0 and 100")]
+        public double DiscountPercentage { get; set; }
+
+        public string? TaxClass { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "VAT amount must be a positive value")]
+        public double VatAmount { get; set; }
+
+        // Shipping
+        public bool IsPhysical { get; set; } = true;
+        public string? Weight { get; set; }
+        public string? Height { get; set; }
+        public string? Length { get; set; }
+        public string? Width { get; set; }
     }
 }

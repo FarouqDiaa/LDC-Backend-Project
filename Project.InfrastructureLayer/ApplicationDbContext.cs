@@ -95,6 +95,10 @@ namespace Project.InfrastructureLayer
                 .Property(pi => pi.IsDeleted)
                 .HasDefaultValue(false);
 
+            modelBuilder.Entity<ProductImage>()
+                .Property(pi => pi.IsCover)
+                .HasDefaultValue(false);
+
             modelBuilder.Entity<Order>()
                 .Property(o => o.CreatedOn)
                 .HasDefaultValueSql("GETUTCDATE()");

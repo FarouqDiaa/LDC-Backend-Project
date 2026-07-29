@@ -84,5 +84,34 @@ namespace Project.BusinessDomainLayer.Services
             return await _customerRepository.IsAdmin(id);
 
         }
+
+        private const int DefaultPageSize = 25;
+        private const int MaxPageSize = 100;
+
+        public async Task<(IEnumerable<CustomerDTO> Items, int TotalCount)> GetAllCustomersAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber <= 0)
+            {
+                pageNumber = 1;
+            }
+            if (pageSize <= 0 || pageSize > MaxPageSize)
+            {
+                pageSize = DefaultPageSize;
+            }
+
+            var customers = await _customerRepository.GetAllPagedAsync(pageNumber, pageSize);
+            var totalCount = await _customerRepository.GetCustomersCountAsync();
+
+            var items = customers.Select(customer =>
+            {
+                var dto = _mapper.Map<CustomerDTO>(customer);
+                var orders = customer.Orders?.Where(o => !o.IsDeleted).ToList() ?? [];
+                dto.OrdersCount = orders.Count;
+                dto.TotalSpent = orders.Sum(o => o.TotalAmount);
+                return dto;
+            });
+
+            return (items, totalCount);
+        }
     }
 }
